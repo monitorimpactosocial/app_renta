@@ -8,7 +8,7 @@ const app = {
     tablaConsultaSortBy: 'fecha',
     tablaConsultaSortAsc: false,
 
-    scriptUrl: "https://script.google.com/macros/s/AKfycbz_XXXXXXXXXX_AQUI_IREMOS_REEMPLAZANDO_EL_ID_XXXXXXXXXX/exec", // URL a modificar post-deploy
+    scriptUrl: "https://script.google.com/macros/s/AKfycbzx6irREkELBkEWDQ8qWaf0erP6o6g9y2AxJWYDO9ItZPq_GFQ3BDJvRl_TOGKEap_pfw/exec", // URL a modificar post-deploy
 
     init() {
         this.mapEls();
