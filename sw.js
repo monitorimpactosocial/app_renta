@@ -1,4 +1,4 @@
-const CACHE_NAME = 'app-renta-v2-cache-v1';
+const CACHE_NAME = 'app-renta-v2-cache-v4';
 const urlsToCache = [
     './',
     './index.html',
