@@ -179,9 +179,26 @@
       <!-- TAB 2: DASHBOARD KPI -->
       <div id="viewDashboard" style="display:none;">
         <div class="section-panel mb-18">
-          <h2>Tablero Operativo <button class="btn btn-secondary btn-small" style="float:right;"
-              onclick="app.cargarDashboard()">↻ Refrescar Datos</button></h2>
-          <p class="muted">Métricas consolidadas de las tablas `_PERSONAS` e `_INTERVENCIONES`.</p>
+          <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="margin-bottom: 8px;">Tablero Operativo</h2>
+              <p class="muted" style="margin: 0;">Métricas consolidadas de las tablas `_PERSONAS` e `_INTERVENCIONES`.
+              </p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <select id="filtroDashboard" onchange="app.cargarDashboard(this.value)"
+                style="width: 220px; padding: 10px 16px;">
+                <option value="TODOS">Todos los Módulos</option>
+                <option value="APICULTURA">Apicultura</option>
+                <option value="AGRICOLA">Producción Agrícola</option>
+                <option value="FORESTAL">Componente Forestal</option>
+                <option value="INDIGENA">Componente Indígena</option>
+              </select>
+              <button class="btn btn-secondary btn-small"
+                onclick="app.cargarDashboard(document.getElementById('filtroDashboard').value)">↻ Refrescar</button>
+            </div>
+          </div>
           <hr>
 
           <div class="grid-3 gap-lg mb-18">

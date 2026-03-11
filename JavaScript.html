@@ -335,7 +335,7 @@
         },
 
         // --- CARGA DE TABLERO KPI ---
-        cargarDashboard: function () {
+        cargarDashboard: function (filtroModulo = 'TODOS') {
             document.getElementById('kpiPersonas').innerText = "...";
             document.getElementById('kpiInterv').innerText = "...";
             document.getElementById('kpiDptos').innerText = "...";
@@ -352,7 +352,7 @@
                     .withFailureHandler(err => {
                         console.error('Error cargando tablero', err);
                     })
-                    .getDashboardMetrics();
+                    .getDashboardMetrics(filtroModulo);
             }
         },
 

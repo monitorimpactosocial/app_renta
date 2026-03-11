@@ -262,46 +262,51 @@ function buscarProductorPWA(ci) {
 /**
  * Devuelve un análisis resumen para el Tablero / Dashboard
  */
-function getDashboardMetrics() {
+function getDashboardMetrics(filtroModulo) {
     const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
     let personas = ss.getSheetByName(SHEET_PERSONAS);
     let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES);
     
     let res = { totalProductores: 0, intervencionesRecientes: 0, modulosAcumulados: {}, dptosAcumulados: {}, timeline: {} };
+    filtroModulo = (filtroModulo && filtroModulo !== 'TODOS') ? filtroModulo.toUpperCase() : null;
     
     if (personas && personas.getLastRow() > 1) {
       const perData = personas.getDataRange().getValues();
-      res.totalProductores = perData.length - 1;
-      
       for(let i=1; i < perData.length; i++) {
          let depto = perData[i][3];
-         if (depto) {
-            res.dptosAcumulados[depto] = (res.dptosAcumulados[depto] || 0) + 1;
+         let act = perData[i][6] ? perData[i][6].toString().toUpperCase() : "";
+         
+         if (!filtroModulo || act === filtroModulo || (act.indexOf(filtroModulo) > -1)) {
+             res.totalProductores++;
+             if (depto) {
+                res.dptosAcumulados[depto] = (res.dptosAcumulados[depto] || 0) + 1;
+             }
          }
       }
     }
     
     if (intervenciones && intervenciones.getLastRow() > 1) {
       const ints = intervenciones.getDataRange().getValues();
-      res.intervencionesRecientes = ints.length - 1;
-      
       for(let i=1; i < ints.length; i++) {
         let fecha = ints[i][1];
-        let modulo = ints[i][3];
+        let modulo = ints[i][3] ? ints[i][3].toString().toUpperCase() : "";
         
-        if(modulo) {
-            if(!res.modulosAcumulados[modulo]) res.modulosAcumulados[modulo] = 0;
-            res.modulosAcumulados[modulo]++;
-        }
-        
-        if (fecha) {
-           try {
-             let d = new Date(fecha);
-             if (!isNaN(d)) {
-               let mes = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0');
-               res.timeline[mes] = (res.timeline[mes] || 0) + 1;
-             }
-           } catch(e) {}
+        if (!filtroModulo || modulo === filtroModulo || (modulo.indexOf(filtroModulo) > -1)) {
+            res.intervencionesRecientes++;
+            if(modulo) {
+                if(!res.modulosAcumulados[modulo]) res.modulosAcumulados[modulo] = 0;
+                res.modulosAcumulados[modulo]++;
+            }
+            
+            if (fecha) {
+               try {
+                 let d = new Date(fecha);
+                 if (!isNaN(d)) {
+                   let mes = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0');
+                   res.timeline[mes] = (res.timeline[mes] || 0) + 1;
+                 }
+               } catch(e) {}
+            }
         }
       }
     }
