@@ -4,6 +4,7 @@
         usuarioActual: null,
         deferredPrompt: null,
         catalogos: null,
+        chartInstances: {},
 
         els: {
             // General
@@ -184,6 +185,7 @@
             this.els.panelDashboard.style.display = 'grid';
             this.els.registroForm.reset();
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+            document.getElementById('comentario').value = '';
             this.els.formMsg.innerHTML = "";
             this.els.statusCI.innerHTML = "";
         },
@@ -305,6 +307,7 @@
             const registro = {};
             formData.forEach((value, key) => { registro[key] = value });
             registro.registrado_por = this.usuarioActual ? this.usuarioActual.nombre : 'Web App';
+            registro.comentario = document.getElementById('comentario').value.trim();
 
             if (typeof google !== 'undefined' && google.script) {
                 google.script.run
@@ -335,26 +338,84 @@
         cargarDashboard: function () {
             document.getElementById('kpiPersonas').innerText = "...";
             document.getElementById('kpiInterv').innerText = "...";
-            document.getElementById('kpiModulos').innerHTML = `<li class="muted">Sincronizando...</li>`;
+            document.getElementById('kpiDptos').innerText = "...";
 
             if (typeof google !== 'undefined' && google.script) {
                 google.script.run
                     .withSuccessHandler(res => {
                         document.getElementById('kpiPersonas').innerText = res.totalProductores;
                         document.getElementById('kpiInterv').innerText = res.intervencionesRecientes;
+                        document.getElementById('kpiDptos').innerText = Object.keys(res.dptosAcumulados).length;
 
-                        let htmlModulos = "";
-                        for (let mod in res.modulosAcumulados) {
-                            htmlModulos += `<li><b>${mod}:</b> ${res.modulosAcumulados[mod]} intervenciones registradas.</li>`;
-                        }
-                        if (htmlModulos === "") htmlModulos = "<li>Sin intervenciones de módulos este mes.</li>";
-                        document.getElementById('kpiModulos').innerHTML = htmlModulos;
+                        this.dibujarGraficos(res);
                     })
                     .withFailureHandler(err => {
-                        document.getElementById('kpiModulos').innerHTML = `<li style="color:red">Error cargando tablero.</li>`;
+                        console.error('Error cargando tablero', err);
                     })
                     .getDashboardMetrics();
             }
+        },
+
+        dibujarGraficos: function (res) {
+            Chart.defaults.font.family = 'Inter, sans-serif';
+
+            // 1. Chart Modulos
+            const modCtx = document.getElementById('chartModulos');
+            if (this.chartInstances.mod) this.chartInstances.mod.destroy();
+            this.chartInstances.mod = new Chart(modCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(res.modulosAcumulados),
+                    datasets: [{
+                        data: Object.values(res.modulosAcumulados),
+                        backgroundColor: ['#0c5b45', '#0fa37f', '#f26d21', '#ff9800'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 2. Chart Dptos
+            const dptCtx = document.getElementById('chartDptos');
+            if (this.chartInstances.dpt) this.chartInstances.dpt.destroy();
+            this.chartInstances.dpt = new Chart(dptCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(res.dptosAcumulados),
+                    datasets: [{
+                        label: 'Productores',
+                        data: Object.values(res.dptosAcumulados),
+                        backgroundColor: '#0c5b45',
+                        borderRadius: 4
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            // 3. Chart Timeline
+            const timeCtx = document.getElementById('chartTimeline');
+            if (this.chartInstances.time) this.chartInstances.time.destroy();
+
+            // Ordenamos meses
+            const meses = Object.keys(res.timeline).sort();
+            const valores = meses.map(m => res.timeline[m]);
+
+            this.chartInstances.time = new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: meses,
+                    datasets: [{
+                        label: 'Intervenciones Mensuales',
+                        data: valores,
+                        borderColor: '#f26d21',
+                        backgroundColor: 'rgba(242, 109, 33, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
         },
 
         // --- ADMINISTRADOR PELIGROSO ---

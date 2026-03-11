@@ -76,7 +76,7 @@ function crearHojaBase(ss, name, headers) {
  */
 function initCoreSheets(ss) {
   let personas = ss.getSheetByName(SHEET_PERSONAS) || crearHojaBase(ss, SHEET_PERSONAS, ["ID_Documento", "Nombres", "Apellidos", "Departamento", "Distrito", "Comunidad", "Tipo_Actividad_Principal", "Ultima_Actualizacion"]);
-  let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES) || crearHojaBase(ss, SHEET_INTERVENCIONES, ["Resumen_ID", "Fecha_Hora", "Tecnico", "Módulo", "Documento_Productor", "Nombre_Productor", "Comunidad", "Detalle_Accion"]);
+  let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES) || crearHojaBase(ss, SHEET_INTERVENCIONES, ["Resumen_ID", "Fecha_Hora", "Tecnico", "Módulo", "Documento_Productor", "Nombre_Productor", "Comunidad", "Detalle_Accion", "Comentarios"]);
   return { personas, intervenciones };
 }
 
@@ -126,7 +126,7 @@ function procesarRegistroWeb(registro) {
     else if (modulo === 'INDIGENA') resumenAccion = `${registro.asistencia} | ${registro.etnia}`;
     
     core.intervenciones.appendRow([
-      resumenID, registro.fecha, registro.registrado_por, modulo, ci, `${registro.nombres} ${registro.apellidos}`, registro.comunidad, resumenAccion
+      resumenID, registro.fecha, registro.registrado_por, modulo, ci, `${registro.nombres} ${registro.apellidos}`, registro.comunidad, resumenAccion, (registro.comentario || "")
     ]);
     
     // 3. INSERT en la hoja ESPECÍFICA OPERATIVA del Módulo (APP_MÓDULO)
@@ -267,10 +267,18 @@ function getDashboardMetrics() {
     let personas = ss.getSheetByName(SHEET_PERSONAS);
     let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES);
     
-    let res = { totalProductores: 0, intervencionesRecientes: 0, modulosAcumulados: {} };
+    let res = { totalProductores: 0, intervencionesRecientes: 0, modulosAcumulados: {}, dptosAcumulados: {}, timeline: {} };
     
-    if (personas) {
-      res.totalProductores = personas.getLastRow() - 1;
+    if (personas && personas.getLastRow() > 1) {
+      const perData = personas.getDataRange().getValues();
+      res.totalProductores = perData.length - 1;
+      
+      for(let i=1; i < perData.length; i++) {
+         let depto = perData[i][3];
+         if (depto) {
+            res.dptosAcumulados[depto] = (res.dptosAcumulados[depto] || 0) + 1;
+         }
+      }
     }
     
     if (intervenciones && intervenciones.getLastRow() > 1) {
@@ -278,9 +286,23 @@ function getDashboardMetrics() {
       res.intervencionesRecientes = ints.length - 1;
       
       for(let i=1; i < ints.length; i++) {
+        let fecha = ints[i][1];
         let modulo = ints[i][3];
-        if(!res.modulosAcumulados[modulo]) res.modulosAcumulados[modulo] = 0;
-        res.modulosAcumulados[modulo]++;
+        
+        if(modulo) {
+            if(!res.modulosAcumulados[modulo]) res.modulosAcumulados[modulo] = 0;
+            res.modulosAcumulados[modulo]++;
+        }
+        
+        if (fecha) {
+           try {
+             let d = new Date(fecha);
+             if (!isNaN(d)) {
+               let mes = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0');
+               res.timeline[mes] = (res.timeline[mes] || 0) + 1;
+             }
+           } catch(e) {}
+        }
       }
     }
     

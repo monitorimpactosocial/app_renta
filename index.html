@@ -15,6 +15,7 @@
     href="https://raw.githubusercontent.com/monitorimpactosocial/app_renta/main/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <?!= include('Stylesheet'); ?>
 </head>
@@ -160,6 +161,12 @@
 
               <div id="camposEspecificos" class="mb-16"></div>
 
+              <div class="field full mb-16">
+                <label for="comentario">Comentario / Observación Libre</label>
+                <textarea id="comentario" name="comentario" rows="3"
+                  placeholder="Añada cualquier información adicional, notas para el técnico, o detalles libres del productor aquí..."></textarea>
+              </div>
+
               <div class="row action-row mt-18">
                 <button type="button" id="btnGuardar" class="btn primary btn-large" style="width:100%"
                   onclick="app.guardarRegistro()">✅ Guardar en Base Central</button>
@@ -179,7 +186,7 @@
           <p class="muted">Métricas consolidadas de las tablas `_PERSONAS` e `_INTERVENCIONES`.</p>
           <hr>
 
-          <div class="grid-3 gap-lg">
+          <div class="grid-3 gap-lg mb-18">
             <div class="kpi-card" style="background:#e8f5e9; padding:20px; border-radius:8px; text-align:center;">
               <div style="font-size:3rem; color:#0c5b45" id="kpiPersonas">--</div>
               <div style="font-weight:bold; color:#07382a">Productores Fichados</div>
@@ -188,12 +195,27 @@
               <div style="font-size:3rem; color:#ff9800" id="kpiInterv">--</div>
               <div style="font-weight:bold; color:#e65100">Intervenciones Registradas</div>
             </div>
+            <div class="kpi-card" style="background:#e3f2fd; padding:20px; border-radius:8px; text-align:center;">
+              <div style="font-size:3rem; color:#2196f3" id="kpiDptos">--</div>
+              <div style="font-weight:bold; color:#0d47a1">Departamentos Alcanzados</div>
+            </div>
           </div>
 
-          <h3 class="mt-18">Desglose de Intervenciones por Módulo</h3>
-          <ul id="kpiModulos" style="list-style:none; padding:0; line-height:2;">
-            <li class="muted">Esperando datos...</li>
-          </ul>
+          <div class="grid-2 gap-lg mb-18">
+            <div class="card" style="padding: 16px;">
+              <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Intervenciones por Módulo</h3>
+              <canvas id="chartModulos"></canvas>
+            </div>
+            <div class="card" style="padding: 16px;">
+              <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Productores por Departamento</h3>
+              <canvas id="chartDptos"></canvas>
+            </div>
+          </div>
+
+          <div class="card mb-18" style="padding: 16px;">
+            <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Evolución Temporal</h3>
+            <div style="height: 250px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
+          </div>
         </div>
 
         <!-- ADMIN DANGER ZONE -->
