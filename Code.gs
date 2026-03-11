@@ -1,327 +1,622 @@
 /**
- * PARACEL - APP RENTA BACKEND V2 (Google Apps Script)
- * Hoja destino: 1uI2M-cBDiUp5DhoGqGWw6y_tzI8yAzEbXjDj17apcj4
+ * PARACEL - APP RENTA V3
+ * Backend mejorado sobre el repositorio existente
  */
 
 const TARGET_SPREADSHEET_ID = "1uI2M-cBDiUp5DhoGqGWw6y_tzI8yAzEbXjDj17apcj4";
 
-// Nombres de las hojas maestras
 const SHEET_PERSONAS = "_PERSONAS";
 const SHEET_INTERVENCIONES = "_INTERVENCIONES";
 const SHEET_AUDITORIA = "_AUDITORIA";
 const SHEET_INDEX = "_LEGADO_INDEX";
 
-/**
- * Sirve la PWA cuando se accede a la URL Web.
- */
-function doGet(e) {
-  const template = HtmlService.createTemplateFromFile('index');
+const PERSONAS_HEADERS = [
+  "ID_Documento",
+  "Nombres",
+  "Apellidos",
+  "Departamento",
+  "Distrito",
+  "Comunidad",
+  "Telefono",
+  "Sexo",
+  "Tipo_Persona",
+  "Organizacion",
+  "Finca_Ha",
+  "Referencia",
+  "Latitud",
+  "Longitud",
+  "Tipo_Actividad_Principal",
+  "Ultima_Actualizacion"
+];
+
+const INTERV_HEADERS = [
+  "Resumen_ID",
+  "Fecha_Hora",
+  "Tecnico",
+  "Modulo",
+  "Documento_Productor",
+  "Nombre_Productor",
+  "Departamento",
+  "Distrito",
+  "Comunidad",
+  "Organizacion",
+  "Detalle_Accion",
+  "Comentarios",
+  "Estado_Seguimiento",
+  "Proxima_Visita"
+];
+
+const MODULE_HEADERS = {
+  APICULTURA: [
+    "Timestamp",
+    "Resumen_ID",
+    "Documento",
+    "Responsable",
+    "Fecha",
+    "Departamento",
+    "Distrito",
+    "Comunidad",
+    "Organizacion",
+    "Tipo_Proyecto",
+    "Asistencia",
+    "Cantidad_Colmenas",
+    "Cantidad_Cajas",
+    "Estado_Productivo",
+    "Comentario"
+  ],
+  AGRICOLA: [
+    "Timestamp",
+    "Resumen_ID",
+    "Documento",
+    "Responsable",
+    "Fecha",
+    "Departamento",
+    "Distrito",
+    "Comunidad",
+    "Organizacion",
+    "Rubro",
+    "Estado_Proyecto",
+    "Superficie_Ha",
+    "Etapa",
+    "Asistencia",
+    "Comentario"
+  ],
+  FORESTAL: [
+    "Timestamp",
+    "Resumen_ID",
+    "Documento",
+    "Responsable",
+    "Fecha",
+    "Departamento",
+    "Distrito",
+    "Comunidad",
+    "Organizacion",
+    "Especie",
+    "Cantidad",
+    "Superficie_Ha",
+    "Tipo_Sistema",
+    "Asistencia",
+    "Comentario"
+  ],
+  INDIGENA: [
+    "Timestamp",
+    "Resumen_ID",
+    "Documento",
+    "Responsable",
+    "Fecha",
+    "Departamento",
+    "Distrito",
+    "Comunidad",
+    "Organizacion",
+    "Etnia",
+    "Pueblo",
+    "Tipo_Asistencia",
+    "Beneficiarios_Hogar",
+    "Lider",
+    "Comentario"
+  ]
+};
+
+function doGet() {
+  const template = HtmlService.createTemplateFromFile("index");
   return template.evaluate()
-    .setTitle('App Renta | Paracel V2')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
+    .setTitle("App Renta | Paracel V3")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/**
- * Función helper para inyectar CSS y JS en el HTML principal.
- */
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-/**
- * Verifica el inicio de sesión.
- */
 function verificarLogin(user, pass) {
   try {
-    const usr = user.trim().toLowerCase();
-    const pwd = pass.trim();
-    if (usr === 'laura' && pwd === 'renta2026') {
+    const usr = String(user || "").trim().toLowerCase();
+    const pwd = String(pass || "").trim();
+
+    if (usr === "laura" && pwd === "renta2026") {
       logAuditoria(usr, "LOGIN", "Inicio de sesión exitoso");
-      return { success: true, user: { nombre: 'Laura', rol: 'admin' } };
+      return { success: true, user: { nombre: "Laura", rol: "admin" } };
     }
+
     logAuditoria(usr, "LOGIN_FAILED", "Intento fallido");
-    return { success: false, error: 'Credenciales inválidas' };
-  } catch(e) {
+    return { success: false, error: "Credenciales inválidas" };
+  } catch (e) {
     return { success: false, error: e.toString() };
   }
 }
 
-/**
- * Registra acciones en la hoja de auditoría
- */
 function logAuditoria(usuario, accion, detalle) {
   try {
     const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-    let sheet = ss.getSheetByName(SHEET_AUDITORIA) || crearHojaBase(ss, SHEET_AUDITORIA, ["Timestamp", "Usuario", "Accion", "Detalle"]);
-    sheet.appendRow([new Date().toISOString(), usuario, accion, detalle]);
-  } catch (e) {
-    // Silencioso
+    const sh = getOrCreateSheet(ss, SHEET_AUDITORIA, ["Timestamp", "Usuario", "Accion", "Detalle"]);
+    sh.appendRow([new Date(), usuario, accion, detalle]);
+  } catch (e) {}
+}
+
+function getOrCreateSheet(ss, name, headers) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(headers);
+    formatHeader_(sh, headers.length);
+    sh.setFrozenRows(1);
+  } else {
+    ensureHeaders_(sh, headers);
   }
+  return sh;
 }
 
-/**
- * Crea una hoja con cabeceras estándar si no existe
- */
-function crearHojaBase(ss, name, headers) {
-  let sheet = ss.insertSheet(name);
-  sheet.appendRow(headers);
-  sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#e0e0e0");
-  sheet.setFrozenRows(1);
-  return sheet;
+function ensureHeaders_(sheet, headers) {
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  const current = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  headers.forEach(h => {
+    if (current.indexOf(h) === -1) {
+      sheet.getRange(1, current.length + 1).setValue(h);
+      current.push(h);
+    }
+  });
+  formatHeader_(sheet, current.length);
 }
 
-/**
- * Obtiene o crea las hojas del core relacional
- */
-function initCoreSheets(ss) {
-  let personas = ss.getSheetByName(SHEET_PERSONAS) || crearHojaBase(ss, SHEET_PERSONAS, ["ID_Documento", "Nombres", "Apellidos", "Departamento", "Distrito", "Comunidad", "Tipo_Actividad_Principal", "Ultima_Actualizacion"]);
-  let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES) || crearHojaBase(ss, SHEET_INTERVENCIONES, ["Resumen_ID", "Fecha_Hora", "Tecnico", "Módulo", "Documento_Productor", "Nombre_Productor", "Comunidad", "Detalle_Accion", "Comentarios"]);
-  return { personas, intervenciones };
+function formatHeader_(sheet, nCols) {
+  sheet.getRange(1, 1, 1, nCols)
+    .setFontWeight("bold")
+    .setBackground("#0b5d4b")
+    .setFontColor("#ffffff");
 }
 
-/**
- * Recibe los datos del formulario web y los distribuye en la estructura relacional (Persona -> Intervención -> Módulo App)
- */
+function headerMap_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+  headers.forEach((h, i) => map[String(h)] = i);
+  return map;
+}
+
+function buildEmptyRow_(headers) {
+  return new Array(headers.length).fill("");
+}
+
+function normalizeText_(x) {
+  return String(x || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeKey_(x) {
+  return normalizeText_(x).toUpperCase();
+}
+
+function uniqueSorted_(arr) {
+  return Array.from(new Set(arr.filter(v => normalizeText_(v) !== ""))).sort((a, b) => String(a).localeCompare(String(b), "es"));
+}
+
+function getCatalogosAvanzados() {
+  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+  const shPer = getOrCreateSheet(ss, SHEET_PERSONAS, PERSONAS_HEADERS);
+  const shForestal = ss.getSheetByName("APP_FORESTAL");
+  const shAgricola = ss.getSheetByName("APP_AGRICOLA");
+  const shApi = ss.getSheetByName("APP_APICULTURA");
+
+  const data = shPer.getLastRow() > 1 ? shPer.getDataRange().getValues() : [];
+  const hm = headerMap_(shPer);
+
+  const departamentos = [];
+  const distritosByDepartamento = {};
+  const comunidadesByDeptoDistrito = {};
+  const organizaciones = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const dep = normalizeText_(row[hm["Departamento"]]);
+    const dis = normalizeText_(row[hm["Distrito"]]);
+    const com = normalizeText_(row[hm["Comunidad"]]);
+    const org = normalizeText_(row[hm["Organizacion"]]);
+
+    if (dep) departamentos.push(dep);
+
+    if (dep && dis) {
+      if (!distritosByDepartamento[dep]) distritosByDepartamento[dep] = [];
+      distritosByDepartamento[dep].push(dis);
+    }
+
+    if (dep && dis && com) {
+      const key = dep + "|||" + dis;
+      if (!comunidadesByDeptoDistrito[key]) comunidadesByDeptoDistrito[key] = [];
+      comunidadesByDeptoDistrito[key].push(com);
+    }
+
+    if (org) organizaciones.push(org);
+  }
+
+  Object.keys(distritosByDepartamento).forEach(k => {
+    distritosByDepartamento[k] = uniqueSorted_(distritosByDepartamento[k]);
+  });
+
+  Object.keys(comunidadesByDeptoDistrito).forEach(k => {
+    comunidadesByDeptoDistrito[k] = uniqueSorted_(comunidadesByDeptoDistrito[k]);
+  });
+
+  const especies = ["Eucalipto", "Pino", "Especies nativas", "Frutales", "Yerba mate"];
+  const rubros = ["Mandioca", "Maíz", "Poroto", "Tomate", "Sésamo", "Hortalizas", "Sandía", "Otros"];
+  const etnias = ["Ayoreo", "Mbya Guaraní", "Ava Guaraní", "Nivaclé", "Enxet", "Guaná", "Sanapaná", "Otros"];
+  const tiposProyecto = ["Individual", "Asociativo", "Comunitario"];
+  const estadosProyecto = ["Diagnóstico", "Implementada", "En seguimiento", "Finalizada"];
+  const etapasAgricolas = ["Preparación", "Siembra", "Mantenimiento", "Cosecha", "Postcosecha"];
+  const tiposSistemaForestal = ["Plantación", "Enriquecimiento", "Agroforestal", "Silvopastoril", "Protección"];
+  const tiposAsistencia = ["Capacitación", "Asistencia técnica", "Entrega de insumos", "Visita de seguimiento", "Levantamiento de datos"];
+  const sexos = ["F", "M", "No especifica"];
+  const tiposPersona = ["Productor", "Productora", "Comité", "Asociación", "Comunidad", "Otro"];
+  const estadosSeguimiento = ["Abierto", "En seguimiento", "Cerrado"];
+
+  return {
+    departamentos: uniqueSorted_(departamentos),
+    distritosByDepartamento,
+    comunidadesByDeptoDistrito,
+    organizaciones: uniqueSorted_(organizaciones),
+    especies,
+    rubros,
+    etnias,
+    tiposProyecto,
+    estadosProyecto,
+    etapasAgricolas,
+    tiposSistemaForestal,
+    tiposAsistencia,
+    sexos,
+    tiposPersona,
+    estadosSeguimiento
+  };
+}
+
+function buscarProductorDetallado(ci) {
+  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+  const shPer = getOrCreateSheet(ss, SHEET_PERSONAS, PERSONAS_HEADERS);
+  const shInt = getOrCreateSheet(ss, SHEET_INTERVENCIONES, INTERV_HEADERS);
+
+  const ciKey = normalizeKey_(ci);
+  const dataPer = shPer.getLastRow() > 1 ? shPer.getDataRange().getValues() : [];
+  const hmPer = headerMap_(shPer);
+
+  let persona = null;
+  for (let i = dataPer.length - 1; i >= 1; i--) {
+    if (normalizeKey_(dataPer[i][hmPer["ID_Documento"]]) === ciKey) {
+      persona = {
+        ci: normalizeText_(dataPer[i][hmPer["ID_Documento"]]),
+        nombres: normalizeText_(dataPer[i][hmPer["Nombres"]]),
+        apellidos: normalizeText_(dataPer[i][hmPer["Apellidos"]]),
+        departamento: normalizeText_(dataPer[i][hmPer["Departamento"]]),
+        distrito: normalizeText_(dataPer[i][hmPer["Distrito"]]),
+        comunidad: normalizeText_(dataPer[i][hmPer["Comunidad"]]),
+        telefono: normalizeText_(dataPer[i][hmPer["Telefono"]]),
+        sexo: normalizeText_(dataPer[i][hmPer["Sexo"]]),
+        tipo_persona: normalizeText_(dataPer[i][hmPer["Tipo_Persona"]]),
+        organizacion: normalizeText_(dataPer[i][hmPer["Organizacion"]]),
+        finca_ha: normalizeText_(dataPer[i][hmPer["Finca_Ha"]]),
+        referencia: normalizeText_(dataPer[i][hmPer["Referencia"]]),
+        latitud: normalizeText_(dataPer[i][hmPer["Latitud"]]),
+        longitud: normalizeText_(dataPer[i][hmPer["Longitud"]]),
+        actividad_principal: normalizeText_(dataPer[i][hmPer["Tipo_Actividad_Principal"]]),
+        ultima_actualizacion: dataPer[i][hmPer["Ultima_Actualizacion"]]
+      };
+      break;
+    }
+  }
+
+  const dataInt = shInt.getLastRow() > 1 ? shInt.getDataRange().getValues() : [];
+  const hmInt = headerMap_(shInt);
+
+  const historial = [];
+  for (let i = dataInt.length - 1; i >= 1; i--) {
+    if (normalizeKey_(dataInt[i][hmInt["Documento_Productor"]]) === ciKey) {
+      historial.push({
+        fecha: dataInt[i][hmInt["Fecha_Hora"]],
+        modulo: dataInt[i][hmInt["Modulo"]],
+        detalle: dataInt[i][hmInt["Detalle_Accion"]],
+        comunidad: dataInt[i][hmInt["Comunidad"]],
+        tecnico: dataInt[i][hmInt["Tecnico"]]
+      });
+      if (historial.length === 5) break;
+    }
+  }
+
+  if (!persona) {
+    return { success: false, msg: "No encontrado", historial };
+  }
+
+  return { success: true, data: persona, historial };
+}
+
 function procesarRegistroWeb(registro) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(15000); // 15s para evitar colisiones
-  
+  lock.waitLock(20000);
+
   try {
     const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-    const core = initCoreSheets(ss);
-    
-    const timestamp = new Date().toISOString();
-    const ci = registro.ci.toString().trim().toUpperCase();
-    const modulo = registro.modulo.toUpperCase();
-    
-    // 1. UPSERT (Update or Insert) en _PERSONAS
-    const tPersonas = core.personas.getDataRange().getValues();
-    let rowPersonaIndex = -1;
-    for (let i = 1; i < tPersonas.length; i++) {
-      if (tPersonas[i][0].toString().trim().toUpperCase() === ci) {
-        rowPersonaIndex = i + 1;
+
+    const shPer = getOrCreateSheet(ss, SHEET_PERSONAS, PERSONAS_HEADERS);
+    const shInt = getOrCreateSheet(ss, SHEET_INTERVENCIONES, INTERV_HEADERS);
+
+    const modulo = normalizeKey_(registro.modulo);
+    if (!MODULE_HEADERS[modulo]) {
+      throw new Error("Módulo no válido: " + modulo);
+    }
+
+    const shModule = getOrCreateSheet(ss, "APP_" + modulo, MODULE_HEADERS[modulo]);
+
+    const timestamp = new Date();
+    const ci = normalizeText_(registro.ci);
+    const nombreCompleto = [normalizeText_(registro.nombres), normalizeText_(registro.apellidos)].join(" ").trim();
+    const resumenID = modulo + "-" + Utilities.getUuid().slice(0, 8).toUpperCase();
+
+    // --- UPSERT _PERSONAS ---
+    const perData = shPer.getLastRow() > 1 ? shPer.getDataRange().getValues() : [];
+    const hmPer = headerMap_(shPer);
+
+    let rowIndex = -1;
+    for (let i = 1; i < perData.length; i++) {
+      if (normalizeKey_(perData[i][hmPer["ID_Documento"]]) === normalizeKey_(ci)) {
+        rowIndex = i + 1;
         break;
       }
     }
-    
-    if (rowPersonaIndex > -1) {
-      // Actualiza datos demográficos si cambió la comunidad
-      core.personas.getRange(rowPersonaIndex, 4, 1, 5).setValues([[registro.departamento, registro.distrito, registro.comunidad, modulo, timestamp]]);
-    } else {
-      // Nueva persona
-      core.personas.appendRow([
-        ci, registro.nombres, registro.apellidos, registro.departamento, registro.distrito, registro.comunidad, modulo, timestamp
-      ]);
-    }
-    
-    // 2. INSERT en _INTERVENCIONES (Log centralizado de actividad cronológica)
-    // Generar un ID único para amarrar la intervención con la tabla específica
-    const resumenID = modulo + "-" + new Date().getTime().toString().slice(-6);
-    // Armar detalle de intervención rápido dependiendo de los campos enviando
-    let resumenAccion = "Registro Creado";
-    if (modulo === 'APICULTURA') resumenAccion = `Proy. ${registro.tipo_proyecto} | ${registro.insumos}`;
-    else if (modulo === 'AGRICOLA') resumenAccion = `${registro.estado_proyecto} | ${registro.rubro}`;
-    else if (modulo === 'FORESTAL') resumenAccion = `${registro.cantidad} uds ${registro.especie}`;
-    else if (modulo === 'INDIGENA') resumenAccion = `${registro.asistencia} | ${registro.etnia}`;
-    
-    core.intervenciones.appendRow([
-      resumenID, registro.fecha, registro.registrado_por, modulo, ci, `${registro.nombres} ${registro.apellidos}`, registro.comunidad, resumenAccion, (registro.comentario || "")
-    ]);
-    
-    // 3. INSERT en la hoja ESPECÍFICA OPERATIVA del Módulo (APP_MÓDULO)
-    const sheetNameOpt = "APP_" + modulo;
-    let sheetOpt = ss.getSheetByName(sheetNameOpt);
-    
-    if (!sheetOpt) {
-      let headers = ["Timestamp", "Resumen_ID", "Documento", "Responsable"];
-      if (modulo === 'APICULTURA') headers.push("Tipo_Proyecto", "Insumos");
-      else if (modulo === 'AGRICOLA') headers.push("Estado_Proyecto", "Rubro");
-      else if (modulo === 'FORESTAL') headers.push("Especie", "Cantidad");
-      else if (modulo === 'INDIGENA') headers.push("Etnia", "Asistencia");
-      
-      sheetOpt = crearHojaBase(ss, sheetNameOpt, headers);
-    }
-    
-    let rowDataOpt = [timestamp, resumenID, ci, registro.registrado_por];
-    if (modulo === 'APICULTURA') rowDataOpt.push(registro.tipo_proyecto, registro.insumos);
-    else if (modulo === 'AGRICOLA') rowDataOpt.push(registro.estado_proyecto, registro.rubro);
-    else if (modulo === 'FORESTAL') rowDataOpt.push(registro.especie, registro.cantidad);
-    else if (modulo === 'INDIGENA') rowDataOpt.push(registro.etnia, registro.asistencia);
-    
-    sheetOpt.appendRow(rowDataOpt);
 
-    logAuditoria(registro.registrado_por, "FORM_SUBMIT", `Módulo: ${modulo} | Doc: ${ci}`);
-    return { success: true };
-    
-  } catch(e) {
-    logAuditoria("SYSTEM", "ERROR", e.toString());
+    const perHeaders = shPer.getRange(1, 1, 1, shPer.getLastColumn()).getValues()[0];
+    const rowPersona = buildEmptyRow_(perHeaders);
+
+    rowPersona[hmPer["ID_Documento"]] = ci;
+    rowPersona[hmPer["Nombres"]] = normalizeText_(registro.nombres);
+    rowPersona[hmPer["Apellidos"]] = normalizeText_(registro.apellidos);
+    rowPersona[hmPer["Departamento"]] = normalizeText_(registro.departamento);
+    rowPersona[hmPer["Distrito"]] = normalizeText_(registro.distrito);
+    rowPersona[hmPer["Comunidad"]] = normalizeText_(registro.comunidad);
+    rowPersona[hmPer["Telefono"]] = normalizeText_(registro.telefono);
+    rowPersona[hmPer["Sexo"]] = normalizeText_(registro.sexo);
+    rowPersona[hmPer["Tipo_Persona"]] = normalizeText_(registro.tipo_persona);
+    rowPersona[hmPer["Organizacion"]] = normalizeText_(registro.organizacion);
+    rowPersona[hmPer["Finca_Ha"]] = normalizeText_(registro.finca_ha);
+    rowPersona[hmPer["Referencia"]] = normalizeText_(registro.referencia);
+    rowPersona[hmPer["Latitud"]] = normalizeText_(registro.latitud);
+    rowPersona[hmPer["Longitud"]] = normalizeText_(registro.longitud);
+    rowPersona[hmPer["Tipo_Actividad_Principal"]] = modulo;
+    rowPersona[hmPer["Ultima_Actualizacion"]] = timestamp;
+
+    if (rowIndex > -1) {
+      shPer.getRange(rowIndex, 1, 1, rowPersona.length).setValues([rowPersona]);
+    } else {
+      shPer.appendRow(rowPersona);
+    }
+
+    // --- _INTERVENCIONES ---
+    const hmInt = headerMap_(shInt);
+    const intHeaders = shInt.getRange(1, 1, 1, shInt.getLastColumn()).getValues()[0];
+    const rowInt = buildEmptyRow_(intHeaders);
+
+    rowInt[hmInt["Resumen_ID"]] = resumenID;
+    rowInt[hmInt["Fecha_Hora"]] = registro.fecha || timestamp;
+    rowInt[hmInt["Tecnico"]] = normalizeText_(registro.registrado_por || "Laura");
+    rowInt[hmInt["Modulo"]] = modulo;
+    rowInt[hmInt["Documento_Productor"]] = ci;
+    rowInt[hmInt["Nombre_Productor"]] = nombreCompleto;
+    rowInt[hmInt["Departamento"]] = normalizeText_(registro.departamento);
+    rowInt[hmInt["Distrito"]] = normalizeText_(registro.distrito);
+    rowInt[hmInt["Comunidad"]] = normalizeText_(registro.comunidad);
+    rowInt[hmInt["Organizacion"]] = normalizeText_(registro.organizacion);
+    rowInt[hmInt["Detalle_Accion"]] = buildDetalleIntervencion_(modulo, registro);
+    rowInt[hmInt["Comentarios"]] = normalizeText_(registro.comentario);
+    rowInt[hmInt["Estado_Seguimiento"]] = normalizeText_(registro.estado_seguimiento);
+    rowInt[hmInt["Proxima_Visita"]] = normalizeText_(registro.proxima_visita);
+
+    shInt.appendRow(rowInt);
+
+    // --- APP_MODULO ---
+    const hmMod = headerMap_(shModule);
+    const modHeaders = shModule.getRange(1, 1, 1, shModule.getLastColumn()).getValues()[0];
+    const rowMod = buildEmptyRow_(modHeaders);
+
+    rowMod[hmMod["Timestamp"]] = timestamp;
+    rowMod[hmMod["Resumen_ID"]] = resumenID;
+    rowMod[hmMod["Documento"]] = ci;
+    rowMod[hmMod["Responsable"]] = normalizeText_(registro.registrado_por || "Laura");
+    rowMod[hmMod["Fecha"]] = registro.fecha || timestamp;
+    rowMod[hmMod["Departamento"]] = normalizeText_(registro.departamento);
+    rowMod[hmMod["Distrito"]] = normalizeText_(registro.distrito);
+    rowMod[hmMod["Comunidad"]] = normalizeText_(registro.comunidad);
+    rowMod[hmMod["Organizacion"]] = normalizeText_(registro.organizacion);
+    rowMod[hmMod["Comentario"]] = normalizeText_(registro.comentario);
+
+    if (modulo === "APICULTURA") {
+      rowMod[hmMod["Tipo_Proyecto"]] = normalizeText_(registro.tipo_proyecto);
+      rowMod[hmMod["Asistencia"]] = normalizeText_(registro.asistencia);
+      rowMod[hmMod["Cantidad_Colmenas"]] = normalizeText_(registro.cantidad_colmenas);
+      rowMod[hmMod["Cantidad_Cajas"]] = normalizeText_(registro.cantidad_cajas);
+      rowMod[hmMod["Estado_Productivo"]] = normalizeText_(registro.estado_productivo);
+    }
+
+    if (modulo === "AGRICOLA") {
+      rowMod[hmMod["Rubro"]] = normalizeText_(registro.rubro);
+      rowMod[hmMod["Estado_Proyecto"]] = normalizeText_(registro.estado_proyecto);
+      rowMod[hmMod["Superficie_Ha"]] = normalizeText_(registro.superficie_ha);
+      rowMod[hmMod["Etapa"]] = normalizeText_(registro.etapa);
+      rowMod[hmMod["Asistencia"]] = normalizeText_(registro.asistencia);
+    }
+
+    if (modulo === "FORESTAL") {
+      rowMod[hmMod["Especie"]] = normalizeText_(registro.especie);
+      rowMod[hmMod["Cantidad"]] = normalizeText_(registro.cantidad);
+      rowMod[hmMod["Superficie_Ha"]] = normalizeText_(registro.superficie_ha);
+      rowMod[hmMod["Tipo_Sistema"]] = normalizeText_(registro.tipo_sistema);
+      rowMod[hmMod["Asistencia"]] = normalizeText_(registro.asistencia);
+    }
+
+    if (modulo === "INDIGENA") {
+      rowMod[hmMod["Etnia"]] = normalizeText_(registro.etnia);
+      rowMod[hmMod["Pueblo"]] = normalizeText_(registro.pueblo);
+      rowMod[hmMod["Tipo_Asistencia"]] = normalizeText_(registro.tipo_asistencia);
+      rowMod[hmMod["Beneficiarios_Hogar"]] = normalizeText_(registro.beneficiarios_hogar);
+      rowMod[hmMod["Lider"]] = normalizeText_(registro.lider);
+    }
+
+    shModule.appendRow(rowMod);
+
+    logAuditoria(registro.registrado_por || "Laura", "FORM_SUBMIT", "Módulo: " + modulo + " | Doc: " + ci);
+
+    return { success: true, resumen_id: resumenID };
+  } catch (e) {
+    logAuditoria(registro && registro.registrado_por ? registro.registrado_por : "Laura", "FORM_ERROR", e.toString());
     return { success: false, error: e.toString() };
   } finally {
     lock.releaseLock();
   }
 }
 
-/**
- * RECONSTRUIR ÍNDICE HISTÓRICO (Diccionario para Prefills desde el Excel viejo)
- * Solo debe ser invocado estáticamente u ocasionalmente por un administrador.
- */
-function reconstruirIndiceHistorico() {
-  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-  
-  // Limpiar / Preparar hoja de sub-índice
-  let sheetIndex = ss.getSheetByName(SHEET_INDEX);
-  if (sheetIndex) {
-    sheetIndex.clear();
-  } else {
-    sheetIndex = crearHojaBase(ss, SHEET_INDEX, ["CEDULA_RUC", "NOMBRES_APELLIDOS", "DEPARTAMENTO", "DISTRITO", "COMUNIDAD", "MODULO_ORIGEN"]);
+function buildDetalleIntervencion_(modulo, registro) {
+  if (modulo === "APICULTURA") {
+    return [
+      registro.tipo_proyecto,
+      registro.asistencia,
+      registro.cantidad_colmenas ? ("Colmenas: " + registro.cantidad_colmenas) : "",
+      registro.cantidad_cajas ? ("Cajas: " + registro.cantidad_cajas) : ""
+    ].filter(Boolean).join(" | ");
   }
-  if (sheetIndex.getLastRow() === 0) sheetIndex.appendRow(["CEDULA_RUC", "NOMBRES_APELLIDOS", "DEPARTAMENTO", "DISTRITO", "COMUNIDAD", "MODULO_ORIGEN"]);
 
-  const sheets = ss.getSheets();
-  const indexData = [];
-  const cedulasProcesadas = new Set();
-  
-  sheets.forEach(sh => {
-    const name = sh.getName().toUpperCase();
-    if (name.startsWith("_") || name.startsWith("APP_")) return; // Ignorar hojas operativas nuevas
-    
-    // Intento ciego de encontrar columnas lógicas ("Cédula", "Nombre", etc.)
-    const data = sh.getDataRange().getValues();
-    if (data.length < 2) return;
-    
-    const headers = data[0].map(h => h.toString().toUpperCase().trim());
-    
-    // Fuzzy matching simplificado para índices nativos
-    let iDoc = headers.findIndex(h => h.includes("C.I") || h.includes("CEDULA") || h.includes("DOCUMENTO"));
-    let iNom = headers.findIndex(h => h.includes("NOMBRE") || h.includes("RAZON SOCIAL"));
-    let iApe = headers.findIndex(h => h.includes("APELLIDO"));
-    let iDep = headers.findIndex(h => h.includes("DEPARTAMENTO"));
-    let iDis = headers.findIndex(h => h.includes("DISTRITO"));
-    let iCom = headers.findIndex(h => h.includes("COMUNIDAD") || h.includes("ASENTAMIENTO") || h.includes("BARRIO"));
-    
-    if (iDoc === -1 || iNom === -1) return; // Si no hay cedula ni nombre, no es una tabla útil para el index
-    
-    for (let r = 1; r < data.length; r++) {
-      let ci = data[r][iDoc] ? data[r][iDoc].toString().trim().replace(/[\.,]/g, '') : null;
-      if (!ci || ci === "" || ci.length < 4 || isNaN(ci)) continue;
-      
-      if (!cedulasProcesadas.has(ci)) {
-        let fullName = data[r][iNom] ? data[r][iNom].toString().trim() : "";
-        if (iApe !== -1 && data[r][iApe]) fullName += " " + data[r][iApe].toString().trim();
-        
-        let dep = iDep !== -1 ? data[r][iDep] : "";
-        let dis = iDis !== -1 ? data[r][iDis] : "";
-        let com = iCom !== -1 ? data[r][iCom] : "";
-        
-        indexData.push([ci, fullName.substring(0, 100), dep, dis, com, name]);
-        cedulasProcesadas.add(ci);
-      }
-    }
-  });
-  
-  if (indexData.length > 0) {
-    sheetIndex.getRange(2, 1, indexData.length, indexData[0].length).setValues(indexData);
+  if (modulo === "AGRICOLA") {
+    return [
+      registro.rubro,
+      registro.estado_proyecto,
+      registro.etapa,
+      registro.superficie_ha ? ("Ha: " + registro.superficie_ha) : ""
+    ].filter(Boolean).join(" | ");
   }
-  
-  return { success: true, regs: indexData.length };
+
+  if (modulo === "FORESTAL") {
+    return [
+      registro.especie,
+      registro.tipo_sistema,
+      registro.cantidad ? ("Cantidad: " + registro.cantidad) : "",
+      registro.superficie_ha ? ("Ha: " + registro.superficie_ha) : ""
+    ].filter(Boolean).join(" | ");
+  }
+
+  if (modulo === "INDIGENA") {
+    return [
+      registro.etnia,
+      registro.pueblo,
+      registro.tipo_asistencia,
+      registro.beneficiarios_hogar ? ("Hogar: " + registro.beneficiarios_hogar) : ""
+    ].filter(Boolean).join(" | ");
+  }
+
+  return "Intervención registrada";
 }
 
-/**
- * Consulta la base _PERSONAS y _LEGADO_INDEX para el autocompletado en el frontend.
- */
-function buscarProductorPWA(ci) {
-  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-  ci = ci.toString().trim().toUpperCase();
-  
-  // Buscar en _PERSONAS (Manda)
-  let sheetPer = ss.getSheetByName(SHEET_PERSONAS);
-  if (sheetPer) {
-    const data = sheetPer.getDataRange().getValues();
-    for (let i = data.length - 1; i > 0; i--) { // Desde el último metido
-      if (data[i][0].toString().trim() === ci) {
-        return { success: true, source: 'CRM', data: { nombres: data[i][1], apellidos: data[i][2], departamento: data[i][3], distrito: data[i][4], comunidad: data[i][5] } };
-      }
-    }
-  }
-  
-  // Si no está, buscar en _LEGADO_INDEX (Histórico)
-  let sheetIdx = ss.getSheetByName(SHEET_INDEX);
-  if (sheetIdx) {
-    const data = sheetIdx.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-        if (data[i][0].toString().trim() === ci) {
-           return { success: true, source: 'LEGACY', data: { nombres: data[i][1] || "", apellidos: "", departamento: data[i][2] || "", distrito: data[i][3] || "", comunidad: data[i][4] || "" } };
-        }
-    }
-  }
-  
-  return { success: false, msg: "No encontrado" };
-}
-
-/**
- * Devuelve un análisis resumen para el Tablero / Dashboard
- */
 function getDashboardMetrics(filtroModulo) {
-    const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
-    let personas = ss.getSheetByName(SHEET_PERSONAS);
-    let intervenciones = ss.getSheetByName(SHEET_INTERVENCIONES);
+  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+  const shPer = getOrCreateSheet(ss, SHEET_PERSONAS, PERSONAS_HEADERS);
+  const shInt = getOrCreateSheet(ss, SHEET_INTERVENCIONES, INTERV_HEADERS);
+  const modulo = normalizeKey_(filtroModulo || "TODOS");
+  const perData = shPer.getLastRow() > 1 ? shPer.getDataRange().getValues() : [];
+  const intData = shInt.getLastRow() > 1 ? shInt.getDataRange().getValues() : [];
+  const hmPer = headerMap_(shPer);
+  const hmInt = headerMap_(shInt);
+  const out = {
+    totalProductores: 0,
+    intervencionesRecientes: 0,
+    dptosAcumulados: {},
+    distritosAcumulados: {},
+    modulosAcumulados: {},
+    sexoAcumulado: { "Femenino": 0, "Masculino": 0, "Otro": 0 },
+    topOrgs: {},
+    timeline: {},
+    recientes: []
+  };
+  for (let i = 1; i < perData.length; i++) {
+    const act = normalizeKey_(perData[i][hmPer["Tipo_Actividad_Principal"]]);
+    if (modulo === "TODOS" || act === modulo || act.indexOf(modulo) > -1) {
+      out.totalProductores++;
+      const org = normalizeText_(perData[i][hmPer["Organizacion"]]);
+      if (org && org !== "No especifica") out.topOrgs[org] = (out.topOrgs[org] || 0) + 1;
+      let sexo = normalizeText_(perData[i][hmPer["Sexo"]]).toUpperCase();
+      if (sexo.startsWith("F")) out.sexoAcumulado["Femenino"]++;
+      else if (sexo.startsWith("M")) out.sexoAcumulado["Masculino"]++;
+      else out.sexoAcumulado["Otro"]++;
+    }
+  }
+  for (let i = intData.length - 1; i >= 1; i--) {
+    const mod = normalizeKey_(intData[i][hmInt["Modulo"]]);
+    if (modulo !== "TODOS" && mod !== modulo && mod.indexOf(modulo) === -1) continue;
+    out.intervencionesRecientes++;
+    out.modulosAcumulados[mod] = (out.modulosAcumulados[mod] || 0) + 1;
+    const depto = normalizeText_(intData[i][hmInt["Departamento"]]);
+    if (depto) out.dptosAcumulados[depto] = (out.dptosAcumulados[depto] || 0) + 1;
+    const dist = normalizeText_(intData[i][hmInt["Distrito"]]);
+    if (dist) out.distritosAcumulados[dist] = (out.distritosAcumulados[dist] || 0) + 1;
     
-    let res = { totalProductores: 0, intervencionesRecientes: 0, modulosAcumulados: {}, dptosAcumulados: {}, timeline: {} };
-    filtroModulo = (filtroModulo && filtroModulo !== 'TODOS') ? filtroModulo.toUpperCase() : null;
-    
-    if (personas && personas.getLastRow() > 1) {
-      const perData = personas.getDataRange().getValues();
-      for(let i=1; i < perData.length; i++) {
-         let depto = perData[i][3];
-         let act = perData[i][6] ? perData[i][6].toString().toUpperCase() : "";
-         
-         if (!filtroModulo || act === filtroModulo || (act.indexOf(filtroModulo) > -1)) {
-             res.totalProductores++;
-             if (depto) {
-                res.dptosAcumulados[depto] = (res.dptosAcumulados[depto] || 0) + 1;
-             }
-         }
+    const fechaInt = intData[i][hmInt["Fecha_Hora"]];
+    if (fechaInt) {
+      const fecha = new Date(fechaInt);
+      if (!isNaN(fecha)) {
+        const k = fecha.getFullYear() + "-" + String(fecha.getMonth() + 1).padStart(2, "0");
+        out.timeline[k] = (out.timeline[k] || 0) + 1;
       }
     }
-    
-    if (intervenciones && intervenciones.getLastRow() > 1) {
-      const ints = intervenciones.getDataRange().getValues();
-      for(let i=1; i < ints.length; i++) {
-        let fecha = ints[i][1];
-        let modulo = ints[i][3] ? ints[i][3].toString().toUpperCase() : "";
-        
-        if (!filtroModulo || modulo === filtroModulo || (modulo.indexOf(filtroModulo) > -1)) {
-            res.intervencionesRecientes++;
-            if(modulo) {
-                if(!res.modulosAcumulados[modulo]) res.modulosAcumulados[modulo] = 0;
-                res.modulosAcumulados[modulo]++;
-            }
-            
-            if (fecha) {
-               try {
-                 let d = new Date(fecha);
-                 if (!isNaN(d)) {
-                   let mes = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2, '0');
-                   res.timeline[mes] = (res.timeline[mes] || 0) + 1;
-                 }
-               } catch(e) {}
-            }
-        }
-      }
+    if (out.recientes.length < 8) {
+      let fStr = "";
+      if (fechaInt instanceof Date) { fStr = fechaInt.toISOString().split("T")[0]; }
+      else { fStr = String(fechaInt || "").substring(0, 10); }
+      out.recientes.push({
+        fecha: fStr,
+        modulo: intData[i][hmInt["Modulo"]],
+        nombre: intData[i][hmInt["Nombre_Productor"]],
+        detalle: intData[i][hmInt["Detalle_Accion"]]
+      });
     }
-    
-    return res;
+  }
+  return out;
 }
 
-/**
- * Devuelve catálogos básicos para poblar listas del frontend (Idea del usuario).
- */
-function obtenerCatalogos() {
-  return {
-    departamentos: ['Concepción', 'San Pedro', 'Caaguazú', 'Alto Paraná', 'Canindeyú', 'Presidente Hayes', 'Amambay'],
-    rubros: ['Mandioca', 'Maíz', 'Poroto', 'Sésamo', 'Hortalizas', 'Sandía', 'Tomate', 'Otros'],
-    especies: ['Eucalipto', 'Pino', 'Especies Nativas', 'Yerba Mate', 'Cítricos'],
-    etnias: ['Ayoreo', 'Mbya Guaraní', 'Ava Guaraní', 'Nivaclé', 'Enxet', 'Guaná', 'Sanapaná', 'Stepit', 'Otros']
-  };
+function getIntervencionesData() {
+  const ss = SpreadsheetApp.openById(TARGET_SPREADSHEET_ID);
+  const sh = ss.getSheetByName(SHEET_INTERVENCIONES);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const data = sh.getDataRange().getDisplayValues();
+  const headers = data[0];
+  const rows = [];
+  for (let i = data.length - 1; i >= 1; i--) {
+    const row = {};
+    headers.forEach((h, j) => {
+      row[h] = data[i][j];
+    });
+    rows.push({
+      fecha: row["Fecha_Hora"] ? String(row["Fecha_Hora"]).substring(0, 10) : "",
+      modulo: row["Modulo"],
+      documento: row["Documento_Productor"],
+      nombre: row["Nombre_Productor"],
+      comunidad: row["Comunidad"],
+      detalle: row["Detalle_Accion"],
+      tecnico: row["Tecnico"]
+    });
+  }
+  return rows;
 }
+
+```

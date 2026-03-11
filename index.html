@@ -65,7 +65,7 @@
       <div class="page-tabs">
         <button id="tabFormularios" class="tab active" onclick="app.switchTab('formularios')">Módulos</button>
         <button id="tabDashboard" class="tab" onclick="app.switchTab('dashboard')">Tablero KPI</button>
-        <!-- <button id="tabHistorial" class="tab" onclick="app.switchTab('historial')">Fichas (_PERSONAS)</button> -->
+        <button id="tabConsulta" class="tab" onclick="app.switchTab('consulta')">Base de Registros</button>
       </div>
 
       <!-- TAB 1: FORMULARIOS (Menú principal) -->
@@ -201,7 +201,7 @@
           </div>
           <hr>
 
-          <div class="grid-3 gap-lg mb-18">
+          <div class="grid-4 gap-lg mb-18">
             <div class="kpi-card">
               <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #047857;">👥</div>
               <div class="kpi-value" id="kpiPersonas" style="color: #064e3b;">--</div>
@@ -217,31 +217,112 @@
               <div class="kpi-value" id="kpiDptos" style="color: #0c4a6e;">--</div>
               <div class="kpi-label">Dptos. Alcanzados</div>
             </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #6d28d9;">🗺️</div>
+              <div class="kpi-value" id="kpiDistritos" style="color: #4c1d95;">--</div>
+              <div class="kpi-label">Distritos Cubiertos</div>
+            </div>
           </div>
 
-          <div class="grid-2 gap-lg mb-18">
+          <div class="grid-3 gap-lg mb-18">
             <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
               <h3
                 style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">📊</span> Distribución por Módulo</h3>
+                <span style="font-size: 1.2rem;">📊</span> Distribución Módulo
+              </h3>
               <div
-                style="position: relative; flex-grow: 1; min-height: 280px; width: 100%; display: flex; justify-content: center; align-items: center;">
-                <canvas id="chartModulos"></canvas></div>
+                style="position: relative; flex-grow: 1; min-height: 240px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                <canvas id="chartModulos"></canvas>
+              </div>
             </div>
             <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
               <h3
                 style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">🗺️</span> Presencia Territorial</h3>
-              <div style="position: relative; flex-grow: 1; min-height: 280px; width: 100%;"><canvas
-                  id="chartDptos"></canvas></div>
+                <span style="font-size: 1.2rem;">🚻</span> Prod. por Sexo
+              </h3>
+              <div
+                style="position: relative; flex-grow: 1; min-height: 240px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                <canvas id="chartSexo"></canvas>
+              </div>
+            </div>
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
+              <h3
+                style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">📍</span> Presencia Territorial
+              </h3>
+              <div style="position: relative; flex-grow: 1; min-height: 240px; width: 100%;">
+                <canvas id="chartDptos"></canvas>
+              </div>
             </div>
           </div>
 
           <div class="card mb-18" style="padding: 24px;">
             <h3
               style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.2rem;">📈</span> Evolución de Impacto (Mes a Mes)</h3>
-            <div style="position: relative; height: 300px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
+              <span style="font-size: 1.2rem;">📈</span> Evolución de Intervenciones Reg. (Histórico)
+            </h3>
+            <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
+          </div>
+
+          <div class="grid-2 gap-lg mb-18 dashboard-tables-row">
+            <div class="card" style="padding: 0;">
+              <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-light);">
+                <h3
+                  style="margin: 0; font-size:1.1rem; color:var(--text-main); display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.2rem;">⏱️</span> Actividad Reciente
+                </h3>
+              </div>
+              <div style="padding: 0; overflow-x: auto;">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                  <thead style="background: #f8fafc;">
+                    <tr>
+                      <th
+                        style="padding: 12px 24px; text-align: left; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                        Fecha</th>
+                      <th
+                        style="padding: 12px 24px; text-align: left; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                        Productor</th>
+                      <th
+                        style="padding: 12px 24px; text-align: left; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                        Módulo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaRecientes">
+                    <tr>
+                      <td colspan="3" style="padding: 24px; text-align: center; color: #94a3b8;">Cargando...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card" style="padding: 0;">
+              <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-light);">
+                <h3
+                  style="margin: 0; font-size:1.1rem; color:var(--text-main); display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.2rem;">🏆</span> Top Organizaciones
+                </h3>
+              </div>
+              <div style="padding: 0; overflow-x: auto;">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                  <thead style="background: #f8fafc;">
+                    <tr>
+                      <th
+                        style="padding: 12px 24px; text-align: left; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                        Organización / Comité</th>
+                      <th
+                        style="padding: 12px 24px; text-align: right; font-size: 0.85rem; color: #64748b; font-weight: 600;">
+                        Fichas</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaTopOrgs">
+                    <tr>
+                      <td colspan="2" style="padding: 24px; text-align: center; color: #94a3b8;">Cargando...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -254,6 +335,54 @@
           <button id="btnRebuild" class="btn btn-secondary" onclick="app.reconstruirIndexHistorico()"
             style="color:#d32f2f; border:1px solid #d32f2f;">Reconstruir Índice Histórico (_LEGADO_INDEX)</button>
           <div id="adminMsg" class="mt-8 text-danger"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: BASE DE DATOS -->
+      <div id="viewConsulta" style="display:none;">
+        <div class="section-panel mb-18" style="min-height: 80vh;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="margin-bottom: 8px;">Base de Registros (Intervenciones)</h2>
+              <p class="muted" style="margin: 0;">Explorar, filtrar y ordenar el historial de visitas e intervenciones
+                técnicas.</p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="searchInput" placeholder="Buscar por nombre, cédula, detalle..."
+                style="width: 250px; padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);"
+                onkeyup="app.filtrarTablaConsulta()">
+              <button class="btn btn-secondary btn-small" onclick="app.cargarTablaConsulta()">↻ Refrescar Datos</button>
+            </div>
+          </div>
+          <hr>
+
+          <div class="table-responsive mt-16" style="overflow-x: auto;">
+            <table class="data-table mb-18" style="width: 100%; border-collapse: collapse; white-space: nowrap;">
+              <thead style="background: #f8fafc; cursor: pointer;">
+                <tr>
+                  <th onclick="app.ordenarTablaConsulta('fecha')"
+                    style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Fecha ↕</th>
+                  <th onclick="app.ordenarTablaConsulta('documento')"
+                    style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Documento ↕</th>
+                  <th onclick="app.ordenarTablaConsulta('nombre')"
+                    style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Productor ↕</th>
+                  <th onclick="app.ordenarTablaConsulta('modulo')"
+                    style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Módulo ↕</th>
+                  <th onclick="app.ordenarTablaConsulta('comunidad')"
+                    style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Comunidad ↕</th>
+                  <th style="padding: 12px 16px; text-align: left; color: #64748b; font-weight: 600;">Detalle Acción
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="tbodyConsulta">
+                <tr>
+                  <td colspan="6" style="padding: 24px; text-align: center; color: #94a3b8;">Haga clic en 'Refrescar
+                    Datos' para cargar el historial.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
