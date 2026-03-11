@@ -117,16 +117,53 @@ const MODULE_HEADERS = {
   ]
 };
 
-function doGet() {
-  const template = HtmlService.createTemplateFromFile("index");
-  return template.evaluate()
-    .setTitle("App Renta | Paracel V3")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+function handleRequest(requestData) {
+  try {
+    const accion = requestData.accion;
+    if (!accion) throw new Error("Acción no especificada");
+
+    switch (accion) {
+      case "verificarLogin":
+        return verificarLogin(requestData.user, requestData.pass);
+      case "getCatalogosAvanzados":
+        return getCatalogosAvanzados();
+      case "buscarProductorDetallado":
+        return buscarProductorDetallado(requestData.ci);
+      case "procesarRegistroWeb":
+        return procesarRegistroWeb(requestData.payload);
+      case "getDashboardMetrics":
+        return getDashboardMetrics(requestData.filtroModulo);
+      case "getIntervencionesData":
+        return getIntervencionesData();
+      default:
+        throw new Error("Acción desconocida: " + accion);
+    }
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+function doPost(e) {
+  let requestData = {};
+  if (e && e.postData && e.postData.contents) {
+    try {
+      requestData = JSON.parse(e.postData.contents);
+    } catch (parseErr) {
+      return responseJSON({ success: false, error: "JSON inválido" });
+    }
+  }
+  return responseJSON(handleRequest(requestData));
+}
+
+function doGet(e) {
+  // Soporte para pruebas GET
+  const req = (e && e.parameter) ? e.parameter : {};
+  return responseJSON(handleRequest(req));
 }
 
 function verificarLogin(user, pass) {
