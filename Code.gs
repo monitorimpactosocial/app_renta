@@ -122,19 +122,41 @@ function responseJSON(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function validarToken(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  const userData = cache.get(token);
+  return userData ? JSON.parse(userData) : null;
+}
+
 function handleRequest(requestData) {
   try {
     const accion = requestData.accion;
     if (!accion) throw new Error("Acción no especificada");
 
+    // Endpoint público (no requiere token)
+    if (accion === "verificarLogin") {
+      return verificarLogin(requestData.user, requestData.pass);
+    }
+
+    // --- CAPA DE SEGURIDAD (TOKEN BASED AUTH) ---
+    const sessionUser = validarToken(requestData.token);
+    if (!sessionUser) {
+      return { success: false, error: "Acceso denegado o sesión expirada.", authError: true };
+    }
+    
+    // Inyectamos el usuario validado para uso interno
+    requestData.sessionUser = sessionUser;
+
     switch (accion) {
-      case "verificarLogin":
-        return verificarLogin(requestData.user, requestData.pass);
       case "getCatalogosAvanzados":
         return getCatalogosAvanzados();
       case "buscarProductorDetallado":
         return buscarProductorDetallado(requestData.ci);
       case "procesarRegistroWeb":
+        // Override sender user from trusted token
+        if (!requestData.payload) requestData.payload = {};
+        requestData.payload.registrado_por = sessionUser.nombre; 
         return procesarRegistroWeb(requestData.payload);
       case "getDashboardMetrics":
         return getDashboardMetrics(requestData.filtroModulo);
@@ -173,7 +195,14 @@ function verificarLogin(user, pass) {
 
     if (usr === "laura" && pwd === "renta2026") {
       logAuditoria(usr, "LOGIN", "Inicio de sesión exitoso");
-      return { success: true, user: { nombre: "Laura", rol: "admin" } };
+      
+      const sessionToken = "tk_" + Utilities.getUuid().replace(/-/g, "");
+      const userData = { nombre: "Laura", rol: "admin" };
+      
+      // Guardar sesión segura en caché de apps script (Expira en 8 horas / 28800s)
+      CacheService.getScriptCache().put(sessionToken, JSON.stringify(userData), 28800);
+
+      return { success: true, user: userData, token: sessionToken };
     }
 
     logAuditoria(usr, "LOGIN_FAILED", "Intento fallido");

@@ -1,5 +1,6 @@
 const app = {
     usuarioActual: null,
+    sessionToken: null,
     catalogos: null,
     chartInstances: {},
     els: {},
@@ -16,6 +17,10 @@ const app = {
 
     async apiCall(accion, payload = {}) {
         payload.accion = accion;
+        if (this.sessionToken) {
+            payload.token = this.sessionToken; // Adjuntar "el pase libre" a la petición
+        }
+
         try {
             const response = await fetch(this.scriptUrl, {
                 method: 'POST',
@@ -25,6 +30,14 @@ const app = {
             });
             if (!response.ok) throw new Error("Error HTTP " + response.status);
             const data = await response.json();
+
+            // Si el servidor detectó que el token es malo o expiró
+            if (data && data.authError) {
+                this.toast("La sesión expiró por seguridad. Vuelve a ingresar.", "error");
+                this.cerrarSesion();
+                return null;
+            }
+
             return data;
         } catch (err) {
             console.error("API Error:", err);
@@ -56,7 +69,7 @@ const app = {
 
     bindBaseEvents() {
         if (this.els.btnLogin) this.els.btnLogin.addEventListener("click", () => this.login());
-        if (this.els.btnLogout) this.els.btnLogout.addEventListener("click", () => this.logout());
+        if (this.els.btnLogout) this.els.btnLogout.addEventListener("click", () => this.cerrarSesion());
         if (this.els.btnBuscarCI) this.els.btnBuscarCI.addEventListener("click", () => this.buscarCI());
         if (this.els.btnGuardar) this.els.btnGuardar.addEventListener("click", () => this.guardarRegistro());
 
@@ -84,6 +97,8 @@ const app = {
             }
 
             this.usuarioActual = res.user;
+            this.sessionToken = res.token; // Guardar la llave en memoria temporal
+
             document.getElementById("lblResponsable").textContent = this.usuarioActual.nombre;
             document.getElementById("fecha").value = new Date().toISOString().split("T")[0];
 
@@ -102,11 +117,13 @@ const app = {
         if (this.els.btnLogout) this.els.btnLogout.style.display = 'inline-block';
     },
 
-    logout() {
+    cerrarSesion() {
         this.usuarioActual = null;
-        document.getElementById("cardApp").style.display = "none";
-        document.getElementById("cardLogin").style.display = "block";
-        if (this.els.btnLogout) this.els.btnLogout.style.display = 'none';
+        this.sessionToken = null;
+        this.els.cardApp.style.display = "none";
+        this.els.cardLogin.style.display = "block";
+        this.els.loginPass.value = "";
+        this.toast("Sesión cerrada correctamente", "info");
     },
 
     // --- NAVEGACIÓN Y TABS V2 ---
