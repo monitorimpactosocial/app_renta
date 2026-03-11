@@ -384,11 +384,24 @@
           </div>
         </div>
       </div>
-
     </section>
+
   </main>
 
   <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('SW registrado con éxito:', registration.scope);
+          })
+          .catch(error => {
+            console.log('Falló el registro del SW:', error);
+          });
+      });
+    }
+  </script>
 </body>
 
 </html>

@@ -8,30 +8,64 @@ const app = {
     tablaConsultaSortBy: 'fecha',
     tablaConsultaSortAsc: false,
 
+    // OFFLINE SYNC
+    db: null,
+    isOffline: !navigator.onLine,
+    pendientesCount: 0,
+
     scriptUrl: "https://script.google.com/macros/s/AKfycbzx6irREkELBkEWDQ8qWaf0erP6o6g9y2AxJWYDO9ItZPq_GFQ3BDJvRl_TOGKEap_pfw/exec", // URL a modificar post-deploy
 
     init() {
         this.mapEls();
-        this.bindBaseEvents();
+        this.initDB().then(() => {
+            this.bindBaseEvents();
+            this.actualizarUIConexion();
+            this.chequearPendientes();
+        });
     },
 
     async apiCall(accion, payload = {}) {
         payload.accion = accion;
         if (this.sessionToken) {
-            payload.token = this.sessionToken; // Adjuntar "el pase libre" a la petición
+            payload.token = this.sessionToken;
+        }
+
+        // --- MODO OFFLINE / INTERCEPTOR ---
+        if (this.isOffline) {
+            if (accion === 'getCatalogosAvanzados') {
+                const cats = await this.dbGet('app_data', 'catalogo_cache');
+                if (cats) {
+                    this.toast("Cargando catálogos sin conexión", "warning");
+                    return cats;
+                } else {
+                    throw new Error("No hay catálogos guardados para uso sin conexión.");
+                }
+            }
+            if (accion === 'procesarRegistroWeb') {
+                payload._id_local = Date.now().toString();
+                await this.dbPut('pendientes', payload);
+                this.pendientesCount++;
+                this.actualizarUIConexion();
+                return { success: true, resumen_id: 'OFFLINE-' + payload._id_local, offline: true };
+            }
+            throw new Error("La función requerida necesita internet.");
         }
 
         try {
             const response = await fetch(this.scriptUrl, {
                 method: 'POST',
                 mode: 'cors',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Apps Script prefiere plain text a veces por tema de preflights
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             });
             if (!response.ok) throw new Error("Error HTTP " + response.status);
             const data = await response.json();
 
-            // Si el servidor detectó que el token es malo o expiró
+            // Guardar catálogos en caché persistente cuando hay red
+            if (accion === 'getCatalogosAvanzados' && data) {
+                await this.dbPut('app_data', { id: 'catalogo_cache', ...data });
+            }
+
             if (data && data.authError) {
                 this.toast("La sesión expiró por seguridad. Vuelve a ingresar.", "error");
                 this.cerrarSesion();
@@ -41,6 +75,15 @@ const app = {
             return data;
         } catch (err) {
             console.error("API Error:", err);
+            // Fallback de autoguardado rápido si falló el POST de red estando en un lugar de mala señal
+            if (accion === 'procesarRegistroWeb') {
+                payload._id_local = Date.now().toString();
+                await this.dbPut('pendientes', payload);
+                this.pendientesCount++;
+                this.actualizarUIConexion();
+                this.toast("Se perdió la señal durante el envío. Guardado localmente.", "warning");
+                return { success: true, resumen_id: 'OFFLINE-' + payload._id_local, offline: true };
+            }
             throw err;
         }
     },
@@ -77,6 +120,133 @@ const app = {
             if (e.target && e.target.id === "departamento") this.onDepartamentoChange();
             if (e.target && e.target.id === "distrito") this.onDistritoChange();
         });
+
+        window.addEventListener('online', () => {
+            this.isOffline = false;
+            this.actualizarUIConexion();
+            this.sincronizarPendientes();
+        });
+
+        window.addEventListener('offline', () => {
+            this.isOffline = true;
+            this.actualizarUIConexion();
+        });
+    },
+
+    // --- BASE DE DATOS LOCAL (INDEXEDDB) ---
+    initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('AppRentaV2_DB', 1);
+            request.onerror = (e) => { console.error("IndexedDB error", e); resolve(); };
+            request.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('pendientes')) {
+                    db.createObjectStore('pendientes', { keyPath: '_id_local' });
+                }
+                if (!db.objectStoreNames.contains('app_data')) {
+                    db.createObjectStore('app_data', { keyPath: 'id' });
+                }
+            };
+        });
+    },
+
+    dbPut(storeName, data) {
+        return new Promise((resolve) => {
+            if (!this.db) return resolve();
+            const tx = this.db.transaction(storeName, 'readwrite');
+            tx.objectStore(storeName).put(data);
+            tx.oncomplete = () => resolve();
+        });
+    },
+
+    dbGet(storeName, id) {
+        return new Promise((resolve) => {
+            if (!this.db) return resolve(null);
+            const tx = this.db.transaction(storeName, 'readonly');
+            const req = tx.objectStore(storeName).get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    },
+
+    dbGetAll(storeName) {
+        return new Promise((resolve) => {
+            if (!this.db) return resolve([]);
+            const tx = this.db.transaction(storeName, 'readonly');
+            const req = tx.objectStore(storeName).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+        });
+    },
+
+    dbDelete(storeName, id) {
+        return new Promise((resolve) => {
+            if (!this.db) return resolve();
+            const tx = this.db.transaction(storeName, 'readwrite');
+            tx.objectStore(storeName).delete(id);
+            tx.oncomplete = () => resolve();
+        });
+    },
+
+    async chequearPendientes() {
+        const rows = await this.dbGetAll('pendientes');
+        this.pendientesCount = rows.length;
+        this.actualizarUIConexion();
+        if (this.pendientesCount > 0 && !this.isOffline) {
+            this.sincronizarPendientes();
+        }
+    },
+
+    actualizarUIConexion() {
+        const pill = document.getElementById("statusPill");
+        if (!pill) return;
+
+        if (this.isOffline) {
+            pill.className = "status-pill soft msg-warning";
+            pill.innerHTML = `Sin Conexión ☁️ <span style="font-size:0.7rem; margin-left:6px; background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:10px;">${this.pendientesCount} pendientes</span>`;
+        } else {
+            pill.className = "status-pill success";
+            if (this.pendientesCount > 0) {
+                pill.innerHTML = `Sincronizando... 🔄 <span style="font-size:0.7rem; margin-left:6px; background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:10px;">${this.pendientesCount} esp</span>`;
+            } else {
+                pill.innerHTML = `Sistema Activo 🟢`;
+            }
+        }
+    },
+
+    async sincronizarPendientes() {
+        if (this.isOffline || !this.sessionToken) return;
+
+        const registros = await this.dbGetAll('pendientes');
+        if (registros.length === 0) return;
+
+        this.toast(`Sincronizando ${registros.length} registros atrasados...`, "info");
+
+        let subidos = 0;
+        for (const reg of registros) {
+            try {
+                // Clonar payload original y quitar marcador local
+                const realPayload = { ...reg };
+                const idLocal = realPayload._id_local;
+                delete realPayload._id_local;
+                delete realPayload.accion;
+                delete realPayload.token;
+
+                const res = await this.apiCall("procesarRegistroWeb", { payload: realPayload });
+                if (res && res.success && !res.offline) {
+                    await this.dbDelete('pendientes', idLocal);
+                    subidos++;
+                    this.pendientesCount--;
+                    this.actualizarUIConexion();
+                }
+            } catch (e) {
+                console.warn("Fallo sincronizando", reg._id_local, e);
+            }
+        }
+
+        if (subidos > 0) {
+            this.toast(`✅ Se sincronizaron ${subidos} registros pendientes correctamente.`, "success");
+        }
     },
 
     // --- SISTEMA LOGIN V2 ---
