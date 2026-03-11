@@ -61,6 +61,27 @@
             // Set fecha actual por defecto
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('fecha').value = today;
+
+            // Registrar Service Worker Dinámico (Requisito estricto de Chrome para PWA)
+            this.registrarServiceWorker();
+        },
+
+        registrarServiceWorker: function () {
+            if ('serviceWorker' in navigator) {
+                // Crear un Service Worker mínimo en memoria a través de un Blob temporal
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => self.clients.claim());
+                    // Requisito de Chrome: debe tener un handler de fetch
+                    self.addEventListener('fetch', (e) => {});
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('Service Worker Registrado Exitosamente'))
+                    .catch(err => console.log('Error al registrar Service Worker: ', err));
+            }
         },
 
         // --- Sistema de Login ---
