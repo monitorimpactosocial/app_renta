@@ -202,34 +202,46 @@
           <hr>
 
           <div class="grid-3 gap-lg mb-18">
-            <div class="kpi-card kpi-green">
-              <div class="kpi-value" id="kpiPersonas">--</div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #047857;">👥</div>
+              <div class="kpi-value" id="kpiPersonas" style="color: #064e3b;">--</div>
               <div class="kpi-label">Productores Fichados</div>
             </div>
-            <div class="kpi-card kpi-orange">
-              <div class="kpi-value" id="kpiInterv">--</div>
-              <div class="kpi-label">Intervenciones Registradas</div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background: rgba(234, 88, 12, 0.1); color: #c2410c;">📝</div>
+              <div class="kpi-value" id="kpiInterv" style="color: #9a3412;">--</div>
+              <div class="kpi-label">Intervenciones Reg.</div>
             </div>
-            <div class="kpi-card kpi-blue">
-              <div class="kpi-value" id="kpiDptos">--</div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background: rgba(14, 165, 233, 0.1); color: #0369a1;">📍</div>
+              <div class="kpi-value" id="kpiDptos" style="color: #0c4a6e;">--</div>
               <div class="kpi-label">Dptos. Alcanzados</div>
             </div>
           </div>
 
           <div class="grid-2 gap-lg mb-18">
-            <div class="card" style="padding: 24px;">
-              <h3>Intervenciones por Módulo</h3>
-              <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartModulos"></canvas></div>
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
+              <h3
+                style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">📊</span> Distribución por Módulo</h3>
+              <div
+                style="position: relative; flex-grow: 1; min-height: 280px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                <canvas id="chartModulos"></canvas></div>
             </div>
-            <div class="card" style="padding: 24px;">
-              <h3>Productores por Departamento</h3>
-              <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartDptos"></canvas></div>
+            <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
+              <h3
+                style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🗺️</span> Presencia Territorial</h3>
+              <div style="position: relative; flex-grow: 1; min-height: 280px; width: 100%;"><canvas
+                  id="chartDptos"></canvas></div>
             </div>
           </div>
 
           <div class="card mb-18" style="padding: 24px;">
-            <h3>Evolución Temporal</h3>
-            <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
+            <h3
+              style="margin-bottom: 24px; font-size:1.1rem; color:var(--text-main); border-bottom: none; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.2rem;">📈</span> Evolución de Impacto (Mes a Mes)</h3>
+            <div style="position: relative; height: 300px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
           </div>
         </div>
 
