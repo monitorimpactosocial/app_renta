@@ -12,7 +12,6 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile('index');
   return template.evaluate()
     .setTitle('App Renta | Paracel')
-    .setFaviconUrl('https://docs.google.com/drawings/d/e/2PACX-1vRL5Z1V5K2lU-sWl5kP28Gtdx3yH__vj7QZ_28I6e1o4P298t41z6f_1x2k3-v1-a-5_9-y/pub?w=200&h=200') // Placeholder favicon
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
