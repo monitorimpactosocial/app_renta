@@ -2,6 +2,7 @@
     // --- Configuración y Estado ---
     const app = {
         usuarioActual: null,
+        deferredPrompt: null,
 
         // Elementos de la UI
         els: {
@@ -13,6 +14,7 @@
             loginPass: document.getElementById('loginPass'),
             btnLogin: document.getElementById('btnLogin'),
             btnLogout: document.getElementById('btnLogout'),
+            btnInstall: document.getElementById('btnInstall'),
             loginMsg: document.getElementById('loginMsg'),
             formMsg: document.getElementById('formMsgContainer'),
             formTitle: document.getElementById('formTitle'),
@@ -32,6 +34,28 @@
             if (session) {
                 this.usuarioActual = JSON.parse(session);
                 this.mostrarApp();
+            }
+
+            // Configurar PWA Install Prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                this.deferredPrompt = e;
+                if (this.els.btnInstall) {
+                    this.els.btnInstall.style.display = 'inline-block';
+                }
+            });
+
+            if (this.els.btnInstall) {
+                this.els.btnInstall.addEventListener('click', async () => {
+                    if (this.deferredPrompt) {
+                        this.deferredPrompt.prompt();
+                        const { outcome } = await this.deferredPrompt.userChoice;
+                        if (outcome === 'accepted') {
+                            this.els.btnInstall.style.display = 'none';
+                        }
+                        this.deferredPrompt = null;
+                    }
+                });
             }
 
             // Set fecha actual por defecto
