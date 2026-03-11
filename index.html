@@ -25,9 +25,7 @@
   <header class="topbar">
     <div class="brand-wrap">
       <div class="brand-logo-box">
-        <div id="logo" class="logo"
-          style="background-color: #f0f0f0; width:40px; height:40px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#0c5b45;">
-          PR</div>
+        <div id="logo" class="logo">PR</div>
       </div>
       <div class="titleblock">
         <div id="appTitle" class="title">PARACEL</div>
@@ -187,33 +185,33 @@
           <hr>
 
           <div class="grid-3 gap-lg mb-18">
-            <div class="kpi-card" style="background:#e8f5e9; padding:20px; border-radius:8px; text-align:center;">
-              <div style="font-size:3rem; color:#0c5b45" id="kpiPersonas">--</div>
-              <div style="font-weight:bold; color:#07382a">Productores Fichados</div>
+            <div class="kpi-card kpi-green">
+              <div class="kpi-value" id="kpiPersonas">--</div>
+              <div class="kpi-label">Productores Fichados</div>
             </div>
-            <div class="kpi-card" style="background:#fff3e0; padding:20px; border-radius:8px; text-align:center;">
-              <div style="font-size:3rem; color:#ff9800" id="kpiInterv">--</div>
-              <div style="font-weight:bold; color:#e65100">Intervenciones Registradas</div>
+            <div class="kpi-card kpi-orange">
+              <div class="kpi-value" id="kpiInterv">--</div>
+              <div class="kpi-label">Intervenciones Registradas</div>
             </div>
-            <div class="kpi-card" style="background:#e3f2fd; padding:20px; border-radius:8px; text-align:center;">
-              <div style="font-size:3rem; color:#2196f3" id="kpiDptos">--</div>
-              <div style="font-weight:bold; color:#0d47a1">Departamentos Alcanzados</div>
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-value" id="kpiDptos">--</div>
+              <div class="kpi-label">Dptos. Alcanzados</div>
             </div>
           </div>
 
           <div class="grid-2 gap-lg mb-18">
-            <div class="card" style="padding: 16px;">
-              <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Intervenciones por Módulo</h3>
+            <div class="card" style="padding: 24px;">
+              <h3>Intervenciones por Módulo</h3>
               <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartModulos"></canvas></div>
             </div>
-            <div class="card" style="padding: 16px;">
-              <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Productores por Departamento</h3>
+            <div class="card" style="padding: 24px;">
+              <h3>Productores por Departamento</h3>
               <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartDptos"></canvas></div>
             </div>
           </div>
 
-          <div class="card mb-18" style="padding: 16px;">
-            <h3 style="margin-bottom: 10px; font-size:1.1rem; color:var(--primary);">Evolución Temporal</h3>
+          <div class="card mb-18" style="padding: 24px;">
+            <h3>Evolución Temporal</h3>
             <div style="position: relative; height: 260px; width: 100%;"><canvas id="chartTimeline"></canvas></div>
           </div>
         </div>
