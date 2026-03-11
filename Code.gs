@@ -286,3 +286,15 @@ function getDashboardMetrics() {
     
     return res;
 }
+
+/**
+ * Devuelve catálogos básicos para poblar listas del frontend (Idea del usuario).
+ */
+function obtenerCatalogos() {
+  return {
+    departamentos: ['Concepción', 'San Pedro', 'Caaguazú', 'Alto Paraná', 'Canindeyú', 'Presidente Hayes', 'Amambay'],
+    rubros: ['Mandioca', 'Maíz', 'Poroto', 'Sésamo', 'Hortalizas', 'Sandía', 'Tomate', 'Otros'],
+    especies: ['Eucalipto', 'Pino', 'Especies Nativas', 'Yerba Mate', 'Cítricos'],
+    etnias: ['Ayoreo', 'Mbya Guaraní', 'Ava Guaraní', 'Nivaclé', 'Enxet', 'Guaná', 'Sanapaná', 'Stepit', 'Otros']
+  };
+}

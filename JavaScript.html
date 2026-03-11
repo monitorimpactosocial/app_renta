@@ -3,6 +3,7 @@
     const app = {
         usuarioActual: null,
         deferredPrompt: null,
+        catalogos: null,
 
         els: {
             // General
@@ -73,8 +74,25 @@
                 });
             }
 
+            // PWA / Service Worker setup
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
             this.registrarServiceWorker();
+
+            // Cargar catalogos dinámicos (Idea del usuario)
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(cat => {
+                        this.catalogos = cat;
+                        this.poblarDatalists();
+                    })
+                    .obtenerCatalogos();
+            }
+        },
+
+        poblarDatalists: function () {
+            if (!this.catalogos) return;
+            const dptList = document.getElementById('list_dptos');
+            if (dptList) dptList.innerHTML = this.catalogos.departamentos.map(d => `<option value="${d}">`).join('');
         },
 
         registrarServiceWorker: function () {
@@ -186,23 +204,38 @@
                     </div>`;
             } else if (modulo === 'agricola') {
                 titulo = "Ficha Producción Agrícola"; sub = "Módulo Agrícola";
+                let opts = this.catalogos ? this.catalogos.rubros.map(r => `<option value="${r}">`).join('') : '';
                 html = `
                     <div class="grid-2 gap-lg">
                       <div><label>Estado del Proyecto</label><select name="estado_proyecto" required><option value="Nueva">Nueva</option><option value="Implementada">Implementada</option></select></div>
-                      <div><label>Rubro / Variedad</label><input type="text" name="rubro" placeholder="Ej: Sandía, Tomate, Huerta" required></div>
+                      <div>
+                        <label>Rubro / Variedad</label>
+                        <input type="text" name="rubro" list="list_rubros" placeholder="Ej: Sandía, Tomate, Huerta" required>
+                        <datalist id="list_rubros">${opts}</datalist>
+                      </div>
                     </div>`;
             } else if (modulo === 'forestal') {
                 titulo = "Ficha Componente Forestal"; sub = "Módulo Forestal";
+                let opts = this.catalogos ? this.catalogos.especies.map(r => `<option value="${r}">`).join('') : '';
                 html = `
                     <div class="grid-2 gap-lg">
-                      <div><label>Especie Forestal</label><input type="text" name="especie" required></div>
+                      <div>
+                        <label>Especie Forestal</label>
+                        <input type="text" name="especie" list="list_esp" required>
+                        <datalist id="list_esp">${opts}</datalist>
+                      </div>
                       <div><label>Cantidad (Uds o Ha)</label><input type="text" name="cantidad" required></div>
                     </div>`;
             } else if (modulo === 'indigena') {
                 titulo = "Ficha Componente Indígena"; sub = "Módulo Indígena";
+                let opts = this.catalogos ? this.catalogos.etnias.map(r => `<option value="${r}">`).join('') : '';
                 html = `
                     <div class="grid-2 gap-lg">
-                      <div><label>Etnia / Pueblo</label><input type="text" name="etnia" required></div>
+                      <div>
+                        <label>Etnia / Pueblo</label>
+                        <input type="text" name="etnia" list="list_etn" required>
+                        <datalist id="list_etn">${opts}</datalist>
+                       </div>
                       <div><label>Tipo de Asistencia/Insumo</label><input type="text" name="asistencia" required></div>
                     </div>`;
             }

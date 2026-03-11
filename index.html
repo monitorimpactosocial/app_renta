@@ -53,7 +53,7 @@
         <label for="loginPass">Contraseña</label>
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
         <div class="row compact mt-18">
-          <button id="btnLogin" class="btn btn-primary">Ingresar Seguro</button>
+          <button id="btnLogin" class="btn primary btn-large" style="width:100%">Ingresar Seguro</button>
         </div>
         <div id="loginMsg"></div>
       </div>
@@ -142,7 +142,8 @@
               <div class="grid-3 gap-lg mb-16">
                 <div>
                   <label for="departamento">Departamento <span style="color:red">*</span></label>
-                  <input type="text" id="departamento" name="departamento" required>
+                  <input type="text" id="departamento" name="departamento" list="list_dptos" required>
+                  <datalist id="list_dptos"></datalist>
                 </div>
                 <div>
                   <label for="distrito">Distrito <span style="color:red">*</span></label>
@@ -160,7 +161,7 @@
               <div id="camposEspecificos" class="mb-16"></div>
 
               <div class="row action-row mt-18">
-                <button type="button" id="btnGuardar" class="btn btn-primary btn-large" style="width:100%"
+                <button type="button" id="btnGuardar" class="btn primary btn-large" style="width:100%"
                   onclick="app.guardarRegistro()">✅ Guardar en Base Central</button>
               </div>
 
