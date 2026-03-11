@@ -1,48 +1,65 @@
 <script>
-    // --- Configuración y Estado ---
+    // --- APP RENTA V2 CONFIGURACIÓN ---
     const app = {
         usuarioActual: null,
         deferredPrompt: null,
 
-        // Elementos de la UI
         els: {
+            // General
             cardLogin: document.getElementById('cardLogin'),
             cardApp: document.getElementById('cardApp'),
-            panelDashboard: document.getElementById('panelDashboard'),
-            panelFormulario: document.getElementById('panelFormulario'),
             loginUser: document.getElementById('loginUser'),
             loginPass: document.getElementById('loginPass'),
             btnLogin: document.getElementById('btnLogin'),
             btnLogout: document.getElementById('btnLogout'),
             btnInstall: document.getElementById('btnInstall'),
             loginMsg: document.getElementById('loginMsg'),
-            formMsg: document.getElementById('formMsgContainer'),
-            formTitle: document.getElementById('formTitle'),
-            camposEspec: document.getElementById('camposEspecificos'),
+            statusPill: document.getElementById('statusPill'),
+
+            // Tabs V2
+            tabs: document.querySelectorAll('.page-tabs .tab'),
+            viewFormularios: document.getElementById('viewFormularios'),
+            viewDashboard: document.getElementById('viewDashboard'),
+
+            // Formularios Internos
+            panelDashboard: document.getElementById('panelDashboard'),
+            panelFormulario: document.getElementById('panelFormulario'),
             moduloActivo: document.getElementById('moduloActivo'),
             registroForm: document.getElementById('registroForm'),
-            btnGuardar: document.getElementById('btnGuardar')
+            formTitle: document.getElementById('formTitle'),
+            camposEspec: document.getElementById('camposEspecificos'),
+            btnGuardar: document.getElementById('btnGuardar'),
+            formMsg: document.getElementById('formMsgContainer'),
+            lblSub: document.getElementById('lblIntervencionSub'),
+            lblResp: document.getElementById('lblResponsable'),
+
+            // Form inputs V2
+            doc: document.getElementById('ci'),
+            nom: document.getElementById('nombres'),
+            Ape: document.getElementById('apellidos'),
+            dep: document.getElementById('departamento'),
+            dis: document.getElementById('distrito'),
+            com: document.getElementById('comunidad'),
+            btnBuscarCI: document.getElementById('btnBuscarCI'),
+            statusCI: document.getElementById('statusCI')
         },
 
         init: function () {
-            // Configurar Event Listeners
             this.els.btnLogin.addEventListener('click', () => this.login());
             this.els.btnLogout.addEventListener('click', () => this.logout());
 
-            // Checkear si hay sesión local
-            const session = localStorage.getItem('appRentaSession');
+            const session = localStorage.getItem('appRentaSessionV2');
             if (session) {
                 this.usuarioActual = JSON.parse(session);
+                this.els.lblResp.innerText = this.usuarioActual.nombre;
                 this.mostrarApp();
             }
 
-            // Configurar PWA Install Prompt
+            // PWA Install Prompt Support
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 this.deferredPrompt = e;
-                if (this.els.btnInstall) {
-                    this.els.btnInstall.style.display = 'inline-block';
-                }
+                if (this.els.btnInstall) this.els.btnInstall.style.display = 'inline-block';
             });
 
             if (this.els.btnInstall) {
@@ -50,87 +67,64 @@
                     if (this.deferredPrompt) {
                         this.deferredPrompt.prompt();
                         const { outcome } = await this.deferredPrompt.userChoice;
-                        if (outcome === 'accepted') {
-                            this.els.btnInstall.style.display = 'none';
-                        }
+                        if (outcome === 'accepted') this.els.btnInstall.style.display = 'none';
                         this.deferredPrompt = null;
                     }
                 });
             }
 
-            // Set fecha actual por defecto
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('fecha').value = today;
-
-            // Registrar Service Worker Dinámico (Requisito estricto de Chrome para PWA)
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
             this.registrarServiceWorker();
         },
 
         registrarServiceWorker: function () {
             if ('serviceWorker' in navigator) {
-                // Crear un Service Worker mínimo en memoria a través de un Blob temporal
                 const swCode = `
                     self.addEventListener('install', (e) => self.skipWaiting());
                     self.addEventListener('activate', (e) => self.clients.claim());
-                    // Requisito de Chrome: debe tener un handler de fetch
                     self.addEventListener('fetch', (e) => {});
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-
-                navigator.serviceWorker.register(swUrl)
-                    .then(reg => console.log('Service Worker Registrado Exitosamente'))
-                    .catch(err => console.log('Error al registrar Service Worker: ', err));
+                navigator.serviceWorker.register(URL.createObjectURL(blob))
+                    .catch(err => console.log('SW Error: ', err));
             }
         },
 
-        // --- Sistema de Login ---
+        // --- SISTEMA LOGIN V2 ---
         login: function () {
             const user = this.els.loginUser.value.trim();
             const pass = this.els.loginPass.value.trim();
-
-            if (!user || !pass) {
-                this.mostrarErrorLogin("Ingrese usuario y contraseña");
-                return;
-            }
+            if (!user || !pass) return this.mostrarErrorLogin("Ingrese usuario y contraseña");
 
             this.els.btnLogin.disabled = true;
-            this.els.btnLogin.textContent = "Verificando...";
+            this.els.btnLogin.textContent = "Verificando Seguridad...";
 
-            // Llamada simulada o real a GAS (si existe backend real conectado)
             if (typeof google !== 'undefined' && google.script) {
                 google.script.run
                     .withSuccessHandler(res => {
-                        if (res.success) {
-                            this.iniciarSesionExitosa(res.user);
-                        } else {
-                            this.mostrarErrorLogin("Credenciales incorrectas");
-                        }
+                        if (res.success) this.iniciarSesionExitosa(res.user);
+                        else this.mostrarErrorLogin("Credenciales incorrectas");
                     })
-                    .withFailureHandler(err => {
-                        this.mostrarErrorLogin("Error de conexión");
-                    })
+                    .withFailureHandler(err => this.mostrarErrorLogin("Fallo de red al servidor de identidad"))
                     .verificarLogin(user, pass);
             } else {
-                // Fallback Local / Modo Desarrollo
+                // Fallback (Local Test)
                 setTimeout(() => {
-                    if (user.toLowerCase() === 'laura' && pass === 'renta2026') {
-                        this.iniciarSesionExitosa({ nombre: 'Laura', rol: 'admin' });
-                    } else {
-                        this.mostrarErrorLogin("Credenciales incorrectas (Test Mode)");
-                    }
-                }, 800);
+                    if (user.toLowerCase() === 'laura' && pass === 'renta2026') this.iniciarSesionExitosa({ nombre: 'Laura', rol: 'admin' });
+                    else this.mostrarErrorLogin("Credenciales incorrectas");
+                }, 1000);
             }
         },
 
         iniciarSesionExitosa: function (userObj) {
             this.usuarioActual = userObj;
-            localStorage.setItem('appRentaSession', JSON.stringify(userObj));
+            localStorage.setItem('appRentaSessionV2', JSON.stringify(userObj));
+            this.els.lblResp.innerText = this.usuarioActual.nombre;
             this.mostrarApp();
         },
 
         logout: function () {
-            localStorage.removeItem('appRentaSession');
+            localStorage.removeItem('appRentaSessionV2');
             this.usuarioActual = null;
             this.els.cardApp.style.display = 'none';
             this.els.cardLogin.style.display = 'block';
@@ -148,17 +142,32 @@
         mostrarErrorLogin: function (msg) {
             this.els.loginMsg.innerHTML = `<div class="msg-error">${msg}</div>`;
             this.els.btnLogin.disabled = false;
-            this.els.btnLogin.textContent = "Ingresar";
+            this.els.btnLogin.textContent = "Ingresar Seguro";
         },
 
-        // --- Navegación Dashboard / Formulario ---
+        // --- NAVEGACIÓN Y TABS V2 ---
+        switchTab: function (tabName) {
+            this.els.tabs.forEach(t => t.classList.remove('active'));
+            this.els.viewFormularios.style.display = 'none';
+            this.els.viewDashboard.style.display = 'none';
+
+            if (tabName === 'formularios') {
+                document.getElementById('tabFormularios').classList.add('active');
+                this.els.viewFormularios.style.display = 'block';
+            } else if (tabName === 'dashboard') {
+                document.getElementById('tabDashboard').classList.add('active');
+                this.els.viewDashboard.style.display = 'block';
+                this.cargarDashboard();
+            }
+        },
+
         volverAlDashboard: function () {
             this.els.panelFormulario.style.display = 'none';
-            this.els.panelDashboard.style.display = 'block';
+            this.els.panelDashboard.style.display = 'grid';
             this.els.registroForm.reset();
-            // Reset fecha
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
             this.els.formMsg.innerHTML = "";
+            this.els.statusCI.innerHTML = "";
         },
 
         abrirFormulario: function (modulo) {
@@ -166,80 +175,90 @@
             this.els.panelFormulario.style.display = 'block';
             this.els.moduloActivo.value = modulo;
 
-            // Generar campos dinámicos
-            let titulo = "";
-            let html = "";
+            let titulo = "", sub = "", html = "";
 
             if (modulo === 'apicultura') {
-                titulo = "Registro: Apicultura";
+                titulo = "Ficha de Apicultura"; sub = "Módulo Apícola";
                 html = `
-        <div class="grid-2 gap-lg">
-          <div>
-            <label>Tipo de Proyecto</label>
-            <select name="tipo_proyecto" required>
-              <option value="">Seleccione...</option>
-              <option value="Individual">Individual</option>
-              <option value="Comunitario">Comunitario</option>
-            </select>
-          </div>
-          <div>
-            <label>Insumos Entregados</label>
-            <input type="text" name="insumos" placeholder="Ej: Cajas, trajes, ahumadores">
-          </div>
-        </div>
-      `;
+                    <div class="grid-2 gap-lg">
+                      <div><label>Tipo de Proyecto</label><select name="tipo_proyecto" required><option value="">Seleccione...</option><option value="Individual">Individual</option><option value="Comunitario">Comunitario</option></select></div>
+                      <div><label>Insumos Entregados</label><input type="text" name="insumos" placeholder="Ej: Cajas, trajes, ahumadores" required></div>
+                    </div>`;
             } else if (modulo === 'agricola') {
-                titulo = "Registro: Producción Agrícola";
+                titulo = "Ficha Producción Agrícola"; sub = "Módulo Agrícola";
                 html = `
-        <div class="grid-2 gap-lg">
-          <div>
-            <label>Estado del Proyecto</label>
-            <select name="estado_proyecto" required>
-              <option value="Nueva">Nueva</option>
-              <option value="Implementada">Implementada</option>
-            </select>
-          </div>
-          <div>
-            <label>Rubro Principal</label>
-            <input type="text" name="rubro" placeholder="Ej: Huerta Familiar, Cultivo de Renta" required>
-          </div>
-        </div>
-      `;
+                    <div class="grid-2 gap-lg">
+                      <div><label>Estado del Proyecto</label><select name="estado_proyecto" required><option value="Nueva">Nueva</option><option value="Implementada">Implementada</option></select></div>
+                      <div><label>Rubro / Variedad</label><input type="text" name="rubro" placeholder="Ej: Sandía, Tomate, Huerta" required></div>
+                    </div>`;
             } else if (modulo === 'forestal') {
-                titulo = "Registro: Componente Forestal";
+                titulo = "Ficha Componente Forestal"; sub = "Módulo Forestal";
                 html = `
-        <div class="grid-2 gap-lg">
-          <div>
-            <label>Especie Plantada</label>
-            <input type="text" name="especie" required>
-          </div>
-          <div>
-            <label>Cantidad (Uds/Hectáreas)</label>
-            <input type="number" step="0.01" name="cantidad" required>
-          </div>
-        </div>
-      `;
+                    <div class="grid-2 gap-lg">
+                      <div><label>Especie Forestal</label><input type="text" name="especie" required></div>
+                      <div><label>Cantidad (Uds o Ha)</label><input type="text" name="cantidad" required></div>
+                    </div>`;
             } else if (modulo === 'indigena') {
-                titulo = "Registro: Componente Indígena";
+                titulo = "Ficha Componente Indígena"; sub = "Módulo Indígena";
                 html = `
-        <div class="grid-2 gap-lg">
-          <div>
-            <label>Etnia / Pueblo</label>
-            <input type="text" name="etnia" required>
-          </div>
-          <div>
-            <label>Tipo de Asistencia</label>
-            <input type="text" name="asistencia" required>
-          </div>
-        </div>
-      `;
+                    <div class="grid-2 gap-lg">
+                      <div><label>Etnia / Pueblo</label><input type="text" name="etnia" required></div>
+                      <div><label>Tipo de Asistencia/Insumo</label><input type="text" name="asistencia" required></div>
+                    </div>`;
             }
 
             this.els.formTitle.textContent = titulo;
+            this.els.lblSub.textContent = sub;
             this.els.camposEspec.innerHTML = html;
         },
 
-        // --- Guardado de Datos ---
+        // --- LÓGICA INTELEGENTE DE AUTORRELLENADO V2 ---
+        buscarCI: function () {
+            const ciDesc = this.els.doc.value.trim();
+            if (!ciDesc || ciDesc.length < 4) {
+                this.els.statusCI.innerHTML = `<span style="color:var(--error); font-size:0.85em;">Ingrese cédula válida.</span>`;
+                return;
+            }
+
+            this.els.btnBuscarCI.disabled = true;
+            this.els.btnBuscarCI.textContent = "⏳...";
+            this.els.statusCI.innerHTML = `<span class="muted" style="font-size:0.85em;">Consultando bases...</span>`;
+
+            if (typeof google === 'undefined') {
+                this.els.btnBuscarCI.disabled = false;
+                this.els.btnBuscarCI.textContent = "🔍 Buscar";
+                return; // Dummy test
+            }
+
+            google.script.run
+                .withSuccessHandler(res => {
+                    this.els.btnBuscarCI.disabled = false;
+                    this.els.btnBuscarCI.textContent = "🔍 Buscar";
+
+                    if (res.success) {
+                        this.els.nom.value = res.data.nombres;
+                        this.els.Ape.value = res.data.apellidos;
+                        this.els.dep.value = res.data.departamento;
+                        this.els.dis.value = res.data.distrito;
+                        this.els.com.value = res.data.comunidad;
+
+                        let badge = res.source === 'CRM' ? `<span class="status-pill success" style="font-size:0.7em;">En CRM Maestro</span>` : `<span class="status-pill soft" style="font-size:0.7em; background:#2196f3; color:white;">En Histórico_LEGACY</span>`;
+                        this.els.statusCI.innerHTML = badge + ` <span style="font-size:0.85em; color:var(--pc-green)">¡Planilla Pre-llenada!</span>`;
+                    } else {
+                        // Limpiar para obligar nueva alta
+                        this.els.nom.value = ""; this.els.Ape.value = ""; this.els.dep.value = ""; this.els.dis.value = ""; this.els.com.value = "";
+                        this.els.statusCI.innerHTML = `<span class="status-pill soft" style="font-size:0.7em; background:#ff9800; color:white;">PRODUCTOR NUEVO</span> <span class="muted" style="font-size:0.8em;">Ingrese datos manualmente.</span>`;
+                    }
+                })
+                .withFailureHandler(err => {
+                    this.els.btnBuscarCI.disabled = false;
+                    this.els.btnBuscarCI.textContent = "🔍 Buscar";
+                    this.els.statusCI.innerHTML = `<span style="color:red; font-size:0.85em;">Servidor desconectado.</span>`;
+                })
+                .buscarProductorPWA(ciDesc);
+        },
+
+        // --- GUARDADO TRANSACCIONAL EN RED V2 ---
         guardarRegistro: function () {
             if (!this.els.registroForm.checkValidity()) {
                 this.els.registroForm.reportValidity();
@@ -247,54 +266,93 @@
             }
 
             this.els.btnGuardar.disabled = true;
-            this.els.btnGuardar.textContent = "Guardando...";
+            this.els.btnGuardar.textContent = "Transfiriendo al servidor core...";
 
-            // Recolectar datos
             const formData = new FormData(this.els.registroForm);
             const registro = {};
             formData.forEach((value, key) => { registro[key] = value });
-
-            // Agregar metadata local
             registro.registrado_por = this.usuarioActual ? this.usuarioActual.nombre : 'Web App';
-            registro.timestamp = new Date().toISOString();
 
             if (typeof google !== 'undefined' && google.script) {
                 google.script.run
                     .withSuccessHandler(res => {
                         this.els.btnGuardar.disabled = false;
-                        this.els.btnGuardar.textContent = "Guardar en Planilla";
+                        this.els.btnGuardar.textContent = "✅ Guardar en Base Central";
                         if (res.success) {
-                            this.mostrarMensajeExito("Registro guardado exitosamente");
+                            this.els.formMsg.innerHTML = `<div class="msg-success"><b>Transacción Aprobada.</b><br>Actualización <i>_PERSONAS</i> y registro en <i>_INTERVENCIONES</i>.</div>`;
                             this.els.registroForm.reset();
-                            setTimeout(() => this.volverAlDashboard(), 2000);
+                            setTimeout(() => this.volverAlDashboard(), 2500);
                         } else {
-                            this.mostrarMensajeError("Hubo un error al guardar: " + res.error);
+                            this.els.formMsg.innerHTML = `<div class="msg-error">Hubo un error al guardar: ${res.error}</div>`;
                         }
                     })
                     .withFailureHandler(err => {
                         this.els.btnGuardar.disabled = false;
-                        this.els.btnGuardar.textContent = "Guardar en Planilla";
-                        this.mostrarMensajeError("Error de red o conexión al servidor");
+                        this.els.btnGuardar.textContent = "✅ Guardar en Base Central";
+                        this.els.formMsg.innerHTML = `<div class="msg-error">La conexión falló antes de terminar.</div>`;
                     })
                     .procesarRegistroWeb(registro);
             } else {
-                // Fallback
-                setTimeout(() => {
-                    this.els.btnGuardar.disabled = false;
-                    this.els.btnGuardar.textContent = "Guardar en Planilla";
-                    this.mostrarMensajeExito("Registro Simulado en Modo Local. Datos: " + JSON.stringify(registro));
-                }, 1000);
+                this.els.btnGuardar.disabled = false;
+                this.els.btnGuardar.textContent = "✅ Guardar (Dev Mode)";
             }
         },
 
-        mostrarMensajeExito: function (msg) {
-            this.els.formMsg.innerHTML = `<div class="msg-success">${msg}</div>`;
+        // --- CARGA DE TABLERO KPI ---
+        cargarDashboard: function () {
+            document.getElementById('kpiPersonas').innerText = "...";
+            document.getElementById('kpiInterv').innerText = "...";
+            document.getElementById('kpiModulos').innerHTML = `<li class="muted">Sincronizando...</li>`;
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(res => {
+                        document.getElementById('kpiPersonas').innerText = res.totalProductores;
+                        document.getElementById('kpiInterv').innerText = res.intervencionesRecientes;
+
+                        let htmlModulos = "";
+                        for (let mod in res.modulosAcumulados) {
+                            htmlModulos += `<li><b>${mod}:</b> ${res.modulosAcumulados[mod]} intervenciones registradas.</li>`;
+                        }
+                        if (htmlModulos === "") htmlModulos = "<li>Sin intervenciones de módulos este mes.</li>";
+                        document.getElementById('kpiModulos').innerHTML = htmlModulos;
+                    })
+                    .withFailureHandler(err => {
+                        document.getElementById('kpiModulos').innerHTML = `<li style="color:red">Error cargando tablero.</li>`;
+                    })
+                    .getDashboardMetrics();
+            }
         },
-        mostrarMensajeError: function (msg) {
-            this.els.formMsg.innerHTML = `<div class="msg-error">${msg}</div>`;
+
+        // --- ADMINISTRADOR PELIGROSO ---
+        reconstruirIndexHistorico: function () {
+            const btn = document.getElementById('btnRebuild');
+            if (confirm("ATENCIÓN:\n\nEsto leerá todas las hojas de Excel antiguas del archivo para aprenderse de memoria sus Cédulas, Nombres y Localidades.\n\n¿Estás seguro de correr esta tarea intensiva ahora mismo?")) {
+                btn.disabled = true;
+                btn.textContent = "Analizando miles de registros (No cierre)...";
+                document.getElementById('adminMsg').innerText = "Procesando en servidores de Google. Podría demorar hasta un minuto.";
+
+                if (typeof google !== 'undefined' && google.script) {
+                    google.script.run
+                        .withSuccessHandler(res => {
+                            btn.disabled = false;
+                            btn.textContent = "Reconstruir Índice Histórico (_LEGADO_INDEX)";
+                            if (res.success) {
+                                document.getElementById('adminMsg').innerHTML = `<span style="color:#2e7d32"><b>Éxito Operativo:</b> Se escanearon e indexaron <b>${res.regs}</b> productores legados para el algoritmo de autocompletado en esta PWA.</span>`;
+                            } else {
+                                document.getElementById('adminMsg').innerText = "Fallo: " + res.error;
+                            }
+                        })
+                        .withFailureHandler(err => {
+                            btn.disabled = false;
+                            btn.textContent = "Reconstruir Índice Histórico (_LEGADO_INDEX)";
+                            document.getElementById('adminMsg').innerText = "Error: Timeout de red al procesar las matrices.";
+                        })
+                        .reconstruirIndiceHistorico();
+                }
+            }
         }
     };
 
-    // Arrancar la app al cargar
     document.addEventListener('DOMContentLoaded', () => app.init());
 </script>

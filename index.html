@@ -6,18 +6,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0c5b45">
-  <title>App Renta | PARACEL</title>
+  <title>App Renta V2 | PARACEL</title>
 
   <!-- Web App Manifest (Data URI) para Instalación PWA -->
   <link rel="manifest"
     href="data:application/manifest+json;charset=utf-8,%7B%0A%20%20%22name%22%3A%20%22App%20Renta%20Paracel%22%2C%0A%20%20%22short_name%22%3A%20%22App%20Renta%22%2C%0A%20%20%22description%22%3A%20%22Sistema%20de%20Monitoreo%20de%20Programas%20Sociales%20de%20Generaci%C3%B3n%20de%20Renta%20-%20Paracel%22%2C%0A%20%20%22start_url%22%3A%20%22.%22%2C%0A%20%20%22display%22%3A%20%22standalone%22%2C%0A%20%20%22background_color%22%3A%20%22%23f7f9fc%22%2C%0A%20%20%22theme_color%22%3A%20%22%230c5b45%22%2C%0A%20%20%22icons%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22https%3A%2F%2Fraw.githubusercontent.com%2Fmonitorimpactosocial%2Fapp_renta%2Fmain%2Ficon-192.png%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22192x192%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image%2Fpng%22%0A%20%20%20%20%7D%2C%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22https%3A%2F%2Fraw.githubusercontent.com%2Fmonitorimpactosocial%2Fapp_renta%2Fmain%2Ficon-512.png%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22512x512%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image%2Fpng%22%0A%20%20%20%20%7D%0A%20%20%5D%0A%7D">
-
-  <!-- Iconos para Apple/iOS -->
   <link rel="apple-touch-icon"
     href="https://raw.githubusercontent.com/monitorimpactosocial/app_renta/main/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="App Renta">
 
   <?!= include('Stylesheet'); ?>
 </head>
@@ -27,18 +24,17 @@
   <header class="topbar">
     <div class="brand-wrap">
       <div class="brand-logo-box">
-        <!-- Puedes cambiar el src de esta imagen a un logo en base64 o URL pública de Paracel -->
         <div id="logo" class="logo"
           style="background-color: #f0f0f0; width:40px; height:40px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#0c5b45;">
-          PP</div>
+          PR</div>
       </div>
       <div class="titleblock">
         <div id="appTitle" class="title">PARACEL</div>
-        <div class="subtitle subtitle-strong">App Renta</div>
+        <div class="subtitle subtitle-strong">App Renta V2</div>
       </div>
     </div>
     <div class="right status-wrap">
-      <div class="status-pill soft success">Sistema Activo</div>
+      <div class="status-pill soft success" id="statusPill">Sistema Activo</div>
       <button id="btnInstall" class="btn btn-primary btn-small" style="display:none; background-color:#ff9800;">Instalar
         App</button>
       <button id="btnLogout" class="logout-link" style="display:none;">Cerrar sesión</button>
@@ -47,120 +43,167 @@
 
   <main class="app-shell">
 
-    <!-- PULL DE LOGIN -->
+    <!-- LOGIN -->
     <section id="cardLogin" class="login-card">
       <div class="login-card-inner">
-        <h1>Acceso al sistema</h1>
-        <p class="muted">Ingrese sus credenciales para acceder a los formularios de registro de Programas de Renta.</p>
-
+        <h1>Acceso al sistema operativo</h1>
+        <p class="muted">Ingrese sus credenciales de técnico para acceder al administrador general de Renta.</p>
         <label for="loginUser">Usuario</label>
         <input id="loginUser" autocomplete="username" placeholder="usuario">
-
         <label for="loginPass">Contraseña</label>
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
-
-        <div class="row compact">
-          <button id="btnLogin" class="btn btn-primary">Ingresar</button>
+        <div class="row compact mt-18">
+          <button id="btnLogin" class="btn btn-primary">Ingresar Seguro</button>
         </div>
-
         <div id="loginMsg"></div>
       </div>
     </section>
 
-    <!-- ÁREA PRINCIPAL DE LA APP -->
+    <!-- CORE APP -->
     <section id="cardApp" style="display:none;">
 
-      <!-- MENÚ DASHBOARD (BOTONES DE ACCESO) -->
-      <div id="panelDashboard">
-        <h2 style="margin-bottom: 20px;">Seleccione un módulo de registro</h2>
+      <!-- NAV TABS -->
+      <div class="page-tabs">
+        <button id="tabFormularios" class="tab active" onclick="app.switchTab('formularios')">Módulos</button>
+        <button id="tabDashboard" class="tab" onclick="app.switchTab('dashboard')">Tablero KPI</button>
+        <!-- <button id="tabHistorial" class="tab" onclick="app.switchTab('historial')">Fichas (_PERSONAS)</button> -->
+      </div>
 
-        <div class="grid-2 gap-lg">
+      <!-- TAB 1: FORMULARIOS (Menú principal) -->
+      <div id="viewFormularios">
+        <div id="panelDashboard" class="dashboard-grid">
+          <h2 style="grid-column: 1/-1;">Registrar una intervención</h2>
           <button class="btn-module" onclick="app.abrirFormulario('apicultura')">
             <div class="icon">🐝</div>
             <div class="text">Apicultura</div>
           </button>
-
           <button class="btn-module" onclick="app.abrirFormulario('agricola')">
             <div class="icon">🌱</div>
             <div class="text">Producción Agrícola</div>
           </button>
-
           <button class="btn-module" onclick="app.abrirFormulario('forestal')">
             <div class="icon">🌳</div>
             <div class="text">Componente Forestal</div>
           </button>
-
           <button class="btn-module" onclick="app.abrirFormulario('indigena')">
             <div class="icon">👥</div>
             <div class="text">Componente Indígena</div>
           </button>
         </div>
+
+        <!-- FORMULARIO V2 (Con Prefill) -->
+        <div id="panelFormulario" style="display:none;">
+          <div class="section-banner section-banner-green mb-18">
+            <button class="btn btn-secondary btn-small mr-16" type="button" onclick="app.volverAlDashboard()">⬅
+              Cancelar</button>
+            <div class="section-banner-title" id="formTitle">Nueva Intervención</div>
+          </div>
+
+          <div class="section-panel form-container">
+            <form id="registroForm">
+              <input type="hidden" id="moduloActivo" name="modulo">
+
+              <div class="metadata-block muted mb-16" style="border-bottom: 1px dotted #ccc; padding-bottom:10px;">
+                <b>Fecha base:</b> <input type="date" id="fecha" name="fecha" required
+                  style="display:inline-block; width:150px; padding:4px;" class="muted">
+                <span style="float:right;"><b>Responsable:</b> <span id="lblResponsable"></span></span>
+              </div>
+
+              <h3>1. Búsqueda y Datos Maestros del Productor</h3>
+              <div class="note-box note-box-info mb-16"
+                style="background:#e3f2fd; border-left:4px solid #2196f3; padding:10px; border-radius:4px;">
+                Ingrese la cédula y presione "Buscar". Si el productor ya existe en la base histórica o maestra, sus
+                datos se completarán solos.
+              </div>
+
+              <div class="grid-2 gap-lg mb-16 align-bottom">
+                <div>
+                  <label for="ci">N° Cédula o RUC (Único) <span style="color:red">*</span></label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="text" id="ci" name="ci" required style="flex:1;">
+                    <button type="button" id="btnBuscarCI" class="btn btn-secondary" onclick="app.buscarCI()">🔍
+                      Buscar</button>
+                  </div>
+                </div>
+                <div id="statusCI"></div>
+              </div>
+
+              <div class="grid-2 gap-lg mb-16">
+                <div>
+                  <label for="nombres">Nombres / Razón Social <span style="color:red">*</span></label>
+                  <input type="text" id="nombres" name="nombres" required>
+                </div>
+                <div>
+                  <label for="apellidos">Apellidos</label>
+                  <input type="text" id="apellidos" name="apellidos">
+                </div>
+              </div>
+
+              <div class="grid-3 gap-lg mb-16">
+                <div>
+                  <label for="departamento">Departamento <span style="color:red">*</span></label>
+                  <input type="text" id="departamento" name="departamento" required>
+                </div>
+                <div>
+                  <label for="distrito">Distrito <span style="color:red">*</span></label>
+                  <input type="text" id="distrito" name="distrito" required>
+                </div>
+                <div>
+                  <label for="comunidad">Comunidad (Localidad) <span style="color:red">*</span></label>
+                  <input type="text" id="comunidad" name="comunidad" required>
+                </div>
+              </div>
+
+              <hr>
+              <h3>2. Detalles de Intervención (<span id="lblIntervencionSub"></span>)</h3>
+
+              <div id="camposEspecificos" class="mb-16"></div>
+
+              <div class="row action-row mt-18">
+                <button type="button" id="btnGuardar" class="btn btn-primary btn-large" style="width:100%"
+                  onclick="app.guardarRegistro()">✅ Guardar en Base Central</button>
+              </div>
+
+              <div id="formMsgContainer" class="mt-8"></div>
+            </form>
+          </div>
+        </div>
       </div>
 
-      <!-- FORMULARIO GENÉRICO -->
-      <div id="panelFormulario" style="display:none;">
-        <div class="section-banner section-banner-green mb-18">
-          <button class="btn btn-secondary btn-small mr-16" onclick="app.volverAlDashboard()">⬅ Volver</button>
-          <div class="section-banner-title" id="formTitle">Nuevo Registro</div>
+      <!-- TAB 2: DASHBOARD KPI -->
+      <div id="viewDashboard" style="display:none;">
+        <div class="section-panel mb-18">
+          <h2>Tablero Operativo <button class="btn btn-secondary btn-small" style="float:right;"
+              onclick="app.cargarDashboard()">↻ Refrescar Datos</button></h2>
+          <p class="muted">Métricas consolidadas de las tablas `_PERSONAS` e `_INTERVENCIONES`.</p>
+          <hr>
+
+          <div class="grid-3 gap-lg">
+            <div class="kpi-card" style="background:#e8f5e9; padding:20px; border-radius:8px; text-align:center;">
+              <div style="font-size:3rem; color:#0c5b45" id="kpiPersonas">--</div>
+              <div style="font-weight:bold; color:#07382a">Productores Fichados</div>
+            </div>
+            <div class="kpi-card" style="background:#fff3e0; padding:20px; border-radius:8px; text-align:center;">
+              <div style="font-size:3rem; color:#ff9800" id="kpiInterv">--</div>
+              <div style="font-weight:bold; color:#e65100">Intervenciones Registradas</div>
+            </div>
+          </div>
+
+          <h3 class="mt-18">Desglose de Intervenciones por Módulo</h3>
+          <ul id="kpiModulos" style="list-style:none; padding:0; line-height:2;">
+            <li class="muted">Esperando datos...</li>
+          </ul>
         </div>
 
-        <div class="section-panel form-container">
-          <form id="registroForm">
-            <!-- Hidden field for context -->
-            <input type="hidden" id="moduloActivo" name="modulo">
-
-            <div class="grid-2 gap-lg mb-16">
-              <div>
-                <label for="fecha">Fecha de Registro</label>
-                <input type="date" id="fecha" name="fecha" required>
-              </div>
-              <div>
-                <label for="ci">N° Cédula o RUC</label>
-                <input type="text" id="ci" name="ci" required>
-              </div>
-            </div>
-
-            <div class="grid-2 gap-lg mb-16">
-              <div>
-                <label for="nombres">Nombres / Razón Social</label>
-                <input type="text" id="nombres" name="nombres" required>
-              </div>
-              <div>
-                <label for="apellidos">Apellidos</label>
-                <input type="text" id="apellidos" name="apellidos">
-              </div>
-            </div>
-
-            <div class="grid-3 gap-lg mb-16">
-              <div>
-                <label for="departamento">Departamento</label>
-                <select id="departamento" name="departamento" required>
-                  <option value="">Seleccione...</option>
-                  <option value="Concepción">Concepción</option>
-                  <option value="Amambay">Amambay</option>
-                  <option value="San Pedro">San Pedro</option>
-                </select>
-              </div>
-              <div>
-                <label for="distrito">Distrito</label>
-                <input type="text" id="distrito" name="distrito" required>
-              </div>
-              <div>
-                <label for="comunidad">Comunidad</label>
-                <input type="text" id="comunidad" name="comunidad" required>
-              </div>
-            </div>
-
-            <!-- Campos Específicos Dinámicos -->
-            <div id="camposEspecificos" class="mb-16"></div>
-
-            <div class="row action-row mt-18">
-              <button type="button" id="btnGuardar" class="btn btn-primary btn-large"
-                onclick="app.guardarRegistro()">Guardar en Planilla</button>
-            </div>
-
-            <div id="formMsgContainer" class="mt-8"></div>
-          </form>
+        <!-- ADMIN DANGER ZONE -->
+        <div class="section-panel admin-zone" style="border:1px solid #ffccbc;">
+          <h3 style="color:#d32f2f">⚙️ Tareas Administrativas Críticas</h3>
+          <p>Este proceso es pesado y reconstruye el diccionario maestro que la aplicación utiliza para autocompletar la
+            Cédula/Localidad basándose en TODAS las hojas del excel original. Cuidado: puede demorar hasta 20 segundos.
+          </p>
+          <button id="btnRebuild" class="btn btn-secondary" onclick="app.reconstruirIndexHistorico()"
+            style="color:#d32f2f; border:1px solid #d32f2f;">Reconstruir Índice Histórico (_LEGADO_INDEX)</button>
+          <div id="adminMsg" class="mt-8 text-danger"></div>
         </div>
       </div>
 
