@@ -13,7 +13,7 @@ const app = {
     isOffline: !navigator.onLine,
     pendientesCount: 0,
 
-    scriptUrl: "https://script.google.com/macros/s/AKfycbzx6irREkELBkEWDQ8qWaf0erP6o6g9y2AxJWYDO9ItZPq_GFQ3BDJvRl_TOGKEap_pfw/exec", // URL a modificar post-deploy
+    scriptUrl: "https://script.google.com/macros/s/AKfycbyVRpdPdArYVP4utNSedWvZ7qIrv5_uX5y9SilkBtwMqlKSlRrT8RCpFRkN_6kuJQGBZA/exec", // URL a modificar post-deploy
 
     init() {
         this.mapEls();
