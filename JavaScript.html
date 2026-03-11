@@ -1,0 +1,255 @@
+<script>
+    // --- Configuración y Estado ---
+    const app = {
+        usuarioActual: null,
+
+        // Elementos de la UI
+        els: {
+            cardLogin: document.getElementById('cardLogin'),
+            cardApp: document.getElementById('cardApp'),
+            panelDashboard: document.getElementById('panelDashboard'),
+            panelFormulario: document.getElementById('panelFormulario'),
+            loginUser: document.getElementById('loginUser'),
+            loginPass: document.getElementById('loginPass'),
+            btnLogin: document.getElementById('btnLogin'),
+            btnLogout: document.getElementById('btnLogout'),
+            loginMsg: document.getElementById('loginMsg'),
+            formMsg: document.getElementById('formMsgContainer'),
+            formTitle: document.getElementById('formTitle'),
+            camposEspec: document.getElementById('camposEspecificos'),
+            moduloActivo: document.getElementById('moduloActivo'),
+            registroForm: document.getElementById('registroForm'),
+            btnGuardar: document.getElementById('btnGuardar')
+        },
+
+        init: function () {
+            // Configurar Event Listeners
+            this.els.btnLogin.addEventListener('click', () => this.login());
+            this.els.btnLogout.addEventListener('click', () => this.logout());
+
+            // Checkear si hay sesión local
+            const session = localStorage.getItem('appRentaSession');
+            if (session) {
+                this.usuarioActual = JSON.parse(session);
+                this.mostrarApp();
+            }
+
+            // Set fecha actual por defecto
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').value = today;
+        },
+
+        // --- Sistema de Login ---
+        login: function () {
+            const user = this.els.loginUser.value.trim();
+            const pass = this.els.loginPass.value.trim();
+
+            if (!user || !pass) {
+                this.mostrarErrorLogin("Ingrese usuario y contraseña");
+                return;
+            }
+
+            this.els.btnLogin.disabled = true;
+            this.els.btnLogin.textContent = "Verificando...";
+
+            // Llamada simulada o real a GAS (si existe backend real conectado)
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(res => {
+                        if (res.success) {
+                            this.iniciarSesionExitosa(res.user);
+                        } else {
+                            this.mostrarErrorLogin("Credenciales incorrectas");
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        this.mostrarErrorLogin("Error de conexión");
+                    })
+                    .verificarLogin(user, pass);
+            } else {
+                // Fallback Local / Modo Desarrollo
+                setTimeout(() => {
+                    if (user.toLowerCase() === 'laura' && pass === 'renta2026') {
+                        this.iniciarSesionExitosa({ nombre: 'Laura', rol: 'admin' });
+                    } else {
+                        this.mostrarErrorLogin("Credenciales incorrectas (Test Mode)");
+                    }
+                }, 800);
+            }
+        },
+
+        iniciarSesionExitosa: function (userObj) {
+            this.usuarioActual = userObj;
+            localStorage.setItem('appRentaSession', JSON.stringify(userObj));
+            this.mostrarApp();
+        },
+
+        logout: function () {
+            localStorage.removeItem('appRentaSession');
+            this.usuarioActual = null;
+            this.els.cardApp.style.display = 'none';
+            this.els.cardLogin.style.display = 'block';
+            this.els.btnLogout.style.display = 'none';
+            this.volverAlDashboard();
+        },
+
+        mostrarApp: function () {
+            this.els.cardLogin.style.display = 'none';
+            this.els.cardApp.style.display = 'block';
+            this.els.btnLogout.style.display = 'inline-block';
+            this.volverAlDashboard();
+        },
+
+        mostrarErrorLogin: function (msg) {
+            this.els.loginMsg.innerHTML = `<div class="msg-error">${msg}</div>`;
+            this.els.btnLogin.disabled = false;
+            this.els.btnLogin.textContent = "Ingresar";
+        },
+
+        // --- Navegación Dashboard / Formulario ---
+        volverAlDashboard: function () {
+            this.els.panelFormulario.style.display = 'none';
+            this.els.panelDashboard.style.display = 'block';
+            this.els.registroForm.reset();
+            // Reset fecha
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+            this.els.formMsg.innerHTML = "";
+        },
+
+        abrirFormulario: function (modulo) {
+            this.els.panelDashboard.style.display = 'none';
+            this.els.panelFormulario.style.display = 'block';
+            this.els.moduloActivo.value = modulo;
+
+            // Generar campos dinámicos
+            let titulo = "";
+            let html = "";
+
+            if (modulo === 'apicultura') {
+                titulo = "Registro: Apicultura";
+                html = `
+        <div class="grid-2 gap-lg">
+          <div>
+            <label>Tipo de Proyecto</label>
+            <select name="tipo_proyecto" required>
+              <option value="">Seleccione...</option>
+              <option value="Individual">Individual</option>
+              <option value="Comunitario">Comunitario</option>
+            </select>
+          </div>
+          <div>
+            <label>Insumos Entregados</label>
+            <input type="text" name="insumos" placeholder="Ej: Cajas, trajes, ahumadores">
+          </div>
+        </div>
+      `;
+            } else if (modulo === 'agricola') {
+                titulo = "Registro: Producción Agrícola";
+                html = `
+        <div class="grid-2 gap-lg">
+          <div>
+            <label>Estado del Proyecto</label>
+            <select name="estado_proyecto" required>
+              <option value="Nueva">Nueva</option>
+              <option value="Implementada">Implementada</option>
+            </select>
+          </div>
+          <div>
+            <label>Rubro Principal</label>
+            <input type="text" name="rubro" placeholder="Ej: Huerta Familiar, Cultivo de Renta" required>
+          </div>
+        </div>
+      `;
+            } else if (modulo === 'forestal') {
+                titulo = "Registro: Componente Forestal";
+                html = `
+        <div class="grid-2 gap-lg">
+          <div>
+            <label>Especie Plantada</label>
+            <input type="text" name="especie" required>
+          </div>
+          <div>
+            <label>Cantidad (Uds/Hectáreas)</label>
+            <input type="number" step="0.01" name="cantidad" required>
+          </div>
+        </div>
+      `;
+            } else if (modulo === 'indigena') {
+                titulo = "Registro: Componente Indígena";
+                html = `
+        <div class="grid-2 gap-lg">
+          <div>
+            <label>Etnia / Pueblo</label>
+            <input type="text" name="etnia" required>
+          </div>
+          <div>
+            <label>Tipo de Asistencia</label>
+            <input type="text" name="asistencia" required>
+          </div>
+        </div>
+      `;
+            }
+
+            this.els.formTitle.textContent = titulo;
+            this.els.camposEspec.innerHTML = html;
+        },
+
+        // --- Guardado de Datos ---
+        guardarRegistro: function () {
+            if (!this.els.registroForm.checkValidity()) {
+                this.els.registroForm.reportValidity();
+                return;
+            }
+
+            this.els.btnGuardar.disabled = true;
+            this.els.btnGuardar.textContent = "Guardando...";
+
+            // Recolectar datos
+            const formData = new FormData(this.els.registroForm);
+            const registro = {};
+            formData.forEach((value, key) => { registro[key] = value });
+
+            // Agregar metadata local
+            registro.registrado_por = this.usuarioActual ? this.usuarioActual.nombre : 'Web App';
+            registro.timestamp = new Date().toISOString();
+
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(res => {
+                        this.els.btnGuardar.disabled = false;
+                        this.els.btnGuardar.textContent = "Guardar en Planilla";
+                        if (res.success) {
+                            this.mostrarMensajeExito("Registro guardado exitosamente");
+                            this.els.registroForm.reset();
+                            setTimeout(() => this.volverAlDashboard(), 2000);
+                        } else {
+                            this.mostrarMensajeError("Hubo un error al guardar: " + res.error);
+                        }
+                    })
+                    .withFailureHandler(err => {
+                        this.els.btnGuardar.disabled = false;
+                        this.els.btnGuardar.textContent = "Guardar en Planilla";
+                        this.mostrarMensajeError("Error de red o conexión al servidor");
+                    })
+                    .procesarRegistroWeb(registro);
+            } else {
+                // Fallback
+                setTimeout(() => {
+                    this.els.btnGuardar.disabled = false;
+                    this.els.btnGuardar.textContent = "Guardar en Planilla";
+                    this.mostrarMensajeExito("Registro Simulado en Modo Local. Datos: " + JSON.stringify(registro));
+                }, 1000);
+            }
+        },
+
+        mostrarMensajeExito: function (msg) {
+            this.els.formMsg.innerHTML = `<div class="msg-success">${msg}</div>`;
+        },
+        mostrarMensajeError: function (msg) {
+            this.els.formMsg.innerHTML = `<div class="msg-error">${msg}</div>`;
+        }
+    };
+
+    // Arrancar la app al cargar
+    document.addEventListener('DOMContentLoaded', () => app.init());
+</script>

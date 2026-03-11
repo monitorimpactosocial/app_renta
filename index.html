@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0c5b45">
+  <title>App Renta | PARACEL</title>
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="brand-logo-box">
+        <!-- Puedes cambiar el src de esta imagen a un logo en base64 o URL pública de Paracel -->
+        <div id="logo" class="logo" style="background-color: #f0f0f0; width:40px; height:40px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#0c5b45;">PP</div>
+      </div>
+      <div class="titleblock">
+        <div id="appTitle" class="title">PARACEL</div>
+        <div class="subtitle subtitle-strong">App Renta</div>
+      </div>
+    </div>
+    <div class="right status-wrap">
+      <div class="status-pill soft success">Sistema Activo</div>
+      <button id="btnLogout" class="logout-link" style="display:none;">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    
+    <!-- PULL DE LOGIN -->
+    <section id="cardLogin" class="login-card">
+      <div class="login-card-inner">
+        <h1>Acceso al sistema</h1>
+        <p class="muted">Ingrese sus credenciales para acceder a los formularios de registro de Programas de Renta.</p>
+
+        <label for="loginUser">Usuario</label>
+        <input id="loginUser" autocomplete="username" placeholder="usuario">
+
+        <label for="loginPass">Contraseña</label>
+        <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
+
+        <div class="row compact">
+          <button id="btnLogin" class="btn btn-primary">Ingresar</button>
+        </div>
+
+        <div id="loginMsg"></div>
+      </div>
+    </section>
+
+    <!-- ÁREA PRINCIPAL DE LA APP -->
+    <section id="cardApp" style="display:none;">
+      
+      <!-- MENÚ DASHBOARD (BOTONES DE ACCESO) -->
+      <div id="panelDashboard">
+        <h2 style="margin-bottom: 20px;">Seleccione un módulo de registro</h2>
+        
+        <div class="grid-2 gap-lg">
+          <button class="btn-module" onclick="app.abrirFormulario('apicultura')">
+            <div class="icon">🐝</div>
+            <div class="text">Apicultura</div>
+          </button>
+          
+          <button class="btn-module" onclick="app.abrirFormulario('agricola')">
+            <div class="icon">🌱</div>
+            <div class="text">Producción Agrícola</div>
+          </button>
+          
+          <button class="btn-module" onclick="app.abrirFormulario('forestal')">
+            <div class="icon">🌳</div>
+            <div class="text">Componente Forestal</div>
+          </button>
+          
+          <button class="btn-module" onclick="app.abrirFormulario('indigena')">
+            <div class="icon">👥</div>
+            <div class="text">Componente Indígena</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- FORMULARIO GENÉRICO -->
+      <div id="panelFormulario" style="display:none;">
+        <div class="section-banner section-banner-green mb-18">
+          <button class="btn btn-secondary btn-small mr-16" onclick="app.volverAlDashboard()">⬅ Volver</button>
+          <div class="section-banner-title" id="formTitle">Nuevo Registro</div>
+        </div>
+
+        <div class="section-panel form-container">
+          <form id="registroForm">
+            <!-- Hidden field for context -->
+            <input type="hidden" id="moduloActivo" name="modulo">
+            
+            <div class="grid-2 gap-lg mb-16">
+              <div>
+                <label for="fecha">Fecha de Registro</label>
+                <input type="date" id="fecha" name="fecha" required>
+              </div>
+              <div>
+                <label for="ci">N° Cédula o RUC</label>
+                <input type="text" id="ci" name="ci" required>
+              </div>
+            </div>
+
+            <div class="grid-2 gap-lg mb-16">
+              <div>
+                <label for="nombres">Nombres / Razón Social</label>
+                <input type="text" id="nombres" name="nombres" required>
+              </div>
+              <div>
+                <label for="apellidos">Apellidos</label>
+                <input type="text" id="apellidos" name="apellidos">
+              </div>
+            </div>
+
+            <div class="grid-3 gap-lg mb-16">
+              <div>
+                <label for="departamento">Departamento</label>
+                <select id="departamento" name="departamento" required>
+                  <option value="">Seleccione...</option>
+                  <option value="Concepción">Concepción</option>
+                  <option value="Amambay">Amambay</option>
+                  <option value="San Pedro">San Pedro</option>
+                </select>
+              </div>
+              <div>
+                <label for="distrito">Distrito</label>
+                <input type="text" id="distrito" name="distrito" required>
+              </div>
+              <div>
+                <label for="comunidad">Comunidad</label>
+                <input type="text" id="comunidad" name="comunidad" required>
+              </div>
+            </div>
+
+            <!-- Campos Específicos Dinámicos -->
+            <div id="camposEspecificos" class="mb-16"></div>
+
+            <div class="row action-row mt-18">
+              <button type="button" id="btnGuardar" class="btn btn-primary btn-large" onclick="app.guardarRegistro()">Guardar en Planilla</button>
+            </div>
+            
+            <div id="formMsgContainer" class="mt-8"></div>
+          </form>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <?!= include('JavaScript'); ?>
+</body>
+</html>
