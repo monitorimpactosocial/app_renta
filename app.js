@@ -25,6 +25,7 @@
     await this.initDB();
     await this.registerServiceWorker();
     this.updateConnectionUi();
+    this.warnIfOpenedOutsideBackend();
     await this.restoreSession();
     await this.refreshPendingState();
   },
@@ -308,16 +309,12 @@
     this.els.btnLogin.disabled = true;
     this.els.btnLogin.textContent = 'Verificando...';
     try {
-      const response = await fetch(`${this.apiBase}/login`, {
+      const { data } = await this.fetchJson(`${this.apiBase}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ username, password })
       });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'No se pudo iniciar sesion');
-      }
       this.renderMessage('loginMsg', '', 'info');
       await this.restoreSession();
       this.toast('Sesion iniciada correctamente.', 'success');
@@ -1049,15 +1046,11 @@
       formData.append('attachments', file.blob, file.name);
     });
 
-    const response = await fetch(`${this.apiBase}/records`, {
+    const { data } = await this.fetchJson(`${this.apiBase}/records`, {
       method: 'POST',
       credentials: 'same-origin',
       body: formData
     });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || 'No se pudo guardar el registro');
-    }
     this.toast(`Registro ${data.record.record_uuid} guardado.`, 'success');
     return data.record;
   },
@@ -1381,14 +1374,60 @@
   },
 
   async apiJson(path) {
-    const response = await fetch(`${this.apiBase}${path}`, {
+    const { data } = await this.fetchJson(`${this.apiBase}${path}`, {
       credentials: 'same-origin'
     });
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Error en la API');
-    }
     return data;
+  },
+
+  warnIfOpenedOutsideBackend() {
+    if (window.location.protocol === 'file:') {
+      this.renderMessage(
+        'loginMsg',
+        'Esta app no debe abrirse como archivo local. Inicia el backend y abre http://127.0.0.1:8080.',
+        'warning'
+      );
+    }
+  },
+
+  async fetchJson(url, options = {}) {
+    let response;
+    try {
+      response = await fetch(url, options);
+    } catch (error) {
+      throw new Error(
+        'No se pudo contactar al backend. Verifica que la app este abierta en http://127.0.0.1:8080 y que server.py siga corriendo.'
+      );
+    }
+
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const rawBody = await response.text();
+    const trimmedBody = rawBody.trim();
+    let data = null;
+
+    if (trimmedBody) {
+      if (contentType.includes('application/json') || trimmedBody.startsWith('{') || trimmedBody.startsWith('[')) {
+        try {
+          data = JSON.parse(trimmedBody);
+        } catch (error) {
+          throw new Error(`La API devolvio JSON invalido en ${url}.`);
+        }
+      } else if (contentType.includes('text/html') || trimmedBody.startsWith('<!DOCTYPE html') || trimmedBody.startsWith('<html')) {
+        throw new Error(
+          `La app recibio HTML en ${url} en lugar de JSON. Abre el monitor desde http://127.0.0.1:8080; no desde index.html ni desde otro servidor.`
+        );
+      } else {
+        throw new Error(`La API devolvio una respuesta inesperada en ${url}.`);
+      }
+    } else {
+      data = {};
+    }
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || `La API respondio con estado ${response.status}.`);
+    }
+
+    return { response, data };
   },
 
   resetForm() {
