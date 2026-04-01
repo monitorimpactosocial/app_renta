@@ -71,6 +71,8 @@
             <form id="registroForm" class="form-grid">
               <input id="moduleKey" name="module_key" type="hidden">
               <input id="moduleLabel" name="module_label" type="hidden">
+              <input id="presetKey" name="preset_key" type="hidden">
+              <input id="presetLabel" name="preset_label" type="hidden">
 
               <div class="field full">
                 <label>Linea de trabajo RPI</label>
@@ -101,6 +103,12 @@
                   </button>
                 </div>
                 <div id="moduleSummary" class="module-summary"></div>
+              </div>
+
+              <div class="field full">
+                <label for="presetSelect">Subficha operativa</label>
+                <select id="presetSelect" name="preset_select"></select>
+                <div id="presetSummary" class="preset-summary"></div>
               </div>
 
               <div class="field">

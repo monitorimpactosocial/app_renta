@@ -10,6 +10,7 @@
   eventSource: null,
   selectedRecordId: null,
   activeModuleKey: 'consulta_clpi',
+  activePresetKey: '',
   moduleDefinitions: {},
   storeNames: {
     pending: 'pending_records',
@@ -54,7 +55,11 @@
       actorClave: pick('actorClave'),
       moduleKey: pick('moduleKey'),
       moduleLabel: pick('moduleLabel'),
+      presetKey: pick('presetKey'),
+      presetLabel: pick('presetLabel'),
+      presetSelect: pick('presetSelect'),
       moduleSummary: pick('moduleSummary'),
+      presetSummary: pick('presetSummary'),
       dynamicFields: pick('dynamicFields'),
       lineName: pick('lineName'),
       expedienteCode: pick('expedienteCode'),
@@ -108,6 +113,7 @@
       this.saveRecord();
     });
     this.els.processFamily.addEventListener('change', () => this.handleProcessFamilyChange());
+    this.els.presetSelect.addEventListener('change', () => this.handlePresetChange());
     this.els.recordFiles.addEventListener('change', () => this.renderSelectedFiles());
     this.els.tabCaptura.addEventListener('click', () => this.setView('captura'));
     this.els.tabDashboard.addEventListener('click', () => this.setView('dashboard'));
@@ -373,6 +379,43 @@
         titlePlaceholder: 'Consulta de CLPI en comunidad',
         evidenceTypes: ['actas', 'informes', 'registros', 'audiovisuales'],
         summary: 'Pensado para actas, acuerdos, consentimiento, lideres participantes y proximos hitos de consulta.',
+        presets: [
+          {
+            key: 'acta_permiso_consentimiento',
+            label: 'Acta de permiso y consentimiento',
+            lineName: 'CCLPI actas de permiso y consentimiento',
+            titlePrefix: 'Acta de permiso y consentimiento',
+            evidenceType: 'actas',
+            summary: 'Usa este preset para permisos, consentimiento y firma de acuerdos iniciales.',
+            fields: [
+              { name: 'sitio_consulta', label: 'Sitio de consulta', type: 'text', placeholder: 'Comunidad, escuela, salon, vivienda...' }
+            ]
+          },
+          {
+            key: 'clpi_nueva_comunidad',
+            label: 'CLPI para nueva comunidad',
+            lineName: 'CLPI nuevas comunidades',
+            titlePrefix: 'Proceso CLPI en nueva comunidad',
+            evidenceType: 'informes',
+            summary: 'Para apertura de proceso CLPI con comunidades nuevas o recientemente incorporadas.'
+          },
+          {
+            key: 'pmf_cpli',
+            label: 'CPLI para PMF',
+            lineName: 'Plan de Manejo Forestal PMF',
+            titlePrefix: 'CPLI vinculado a PMF',
+            evidenceType: 'actas',
+            summary: 'Pensado para sesiones de consulta vinculadas al plan de manejo forestal.'
+          },
+          {
+            key: 'seguimiento_consulta',
+            label: 'Seguimiento de consulta',
+            lineName: 'Seguimiento de consulta y consentimiento',
+            titlePrefix: 'Seguimiento de consulta',
+            evidenceType: 'registros',
+            summary: 'Para seguimiento posterior a actas, acuerdos y hitos ya iniciados.'
+          }
+        ],
         fields: [
           { name: 'ruta_consulta', label: 'Ruta de consulta', type: 'select', options: ['CCLPI', 'CLPI', 'CPLI', 'Consulta preliminar'] },
           { name: 'fase_consulta', label: 'Fase actual', type: 'select', options: ['Preparacion', 'Socializacion', 'Deliberacion', 'Consentimiento', 'Seguimiento'] },
@@ -389,6 +432,40 @@
         titlePlaceholder: 'Gestion documental en comunidad',
         evidenceTypes: ['registros', 'solicitud', 'informes', 'facturas'],
         summary: 'Para tramites, solicitudes, cedulas, certificados, carnet indigena y seguimiento administrativo.',
+        presets: [
+          {
+            key: 'carnet_indigena',
+            label: 'Carnet indigena',
+            lineName: 'TG04 Carnet indigena',
+            titlePrefix: 'Gestion de carnet indigena',
+            evidenceType: 'registros',
+            summary: 'Para jornadas de carnet indigena, recepcion de documentos y entrega.'
+          },
+          {
+            key: 'cedulacion',
+            label: 'Cedulacion',
+            lineName: 'TG04 Cedulacion',
+            titlePrefix: 'Gestion de cedulacion',
+            evidenceType: 'solicitud',
+            summary: 'Para primera vez, renovacion, contrasenas o seguimiento con Identificaciones.'
+          },
+          {
+            key: 'inscripcion_nacimiento',
+            label: 'Inscripcion de nacimiento',
+            lineName: 'TG04 Inscripcion de nacimiento',
+            titlePrefix: 'Inscripcion de nacimiento',
+            evidenceType: 'solicitud',
+            summary: 'Para partidas, inscripcion tardia, informes de no existencia y tramites conexos.'
+          },
+          {
+            key: 'certificados',
+            label: 'Certificados y constancias',
+            lineName: 'TG04 Certificados',
+            titlePrefix: 'Gestion de certificados',
+            evidenceType: 'informes',
+            summary: 'Para certificados, constancias y otros documentos administrativos.'
+          }
+        ],
         fields: [
           { name: 'tipo_documentacion', label: 'Tipo de documentacion', type: 'select', options: ['Carnet indigena', 'Cedula primera vez', 'Cedula renovacion', 'Certificado', 'Inscripcion de nacimiento', 'Otro'] },
           { name: 'institucion_referida', label: 'Institucion referida', type: 'select', options: ['INDI', 'Registro Civil', 'Identificaciones', 'Municipalidad', 'Otro'] },
@@ -405,6 +482,40 @@
         titlePlaceholder: 'Relevamiento de servicios ecosistemicos',
         evidenceTypes: ['encuesta', 'relevamiento', 'mapas', 'informes'],
         summary: 'Para linea de base, encuestas, mapeos, diagnosticos y monitoreo territorial o ambiental.',
+        presets: [
+          {
+            key: 'linea_base',
+            label: 'Linea de base',
+            lineName: 'TG01 Linea de base',
+            titlePrefix: 'Linea de base de servicios ecosistemicos',
+            evidenceType: 'encuesta',
+            summary: 'Para instrumentos base, fichas de levantamiento y datos de arranque.'
+          },
+          {
+            key: 'mapeo_comunitario',
+            label: 'Mapeo comunitario',
+            lineName: 'TG01 Mapeo comunitario',
+            titlePrefix: 'Mapeo comunitario',
+            evidenceType: 'mapas',
+            summary: 'Para croquis, mapas, delimitacion territorial y ubicacion de recursos.'
+          },
+          {
+            key: 'relevamiento_territorial',
+            label: 'Relevamiento territorial',
+            lineName: 'TG01 Relevamiento territorial',
+            titlePrefix: 'Relevamiento territorial',
+            evidenceType: 'relevamiento',
+            summary: 'Para recorridos de campo, validacion territorial y observacion directa.'
+          },
+          {
+            key: 'monitoreo_ecosistemico',
+            label: 'Monitoreo ecosistemico',
+            lineName: 'TG01 Monitoreo ecosistemico',
+            titlePrefix: 'Monitoreo ecosistemico',
+            evidenceType: 'informes',
+            summary: 'Para seguimiento periodico, cambios observados y comparacion temporal.'
+          }
+        ],
         fields: [
           { name: 'instrumento_aplicado', label: 'Instrumento aplicado', type: 'select', options: ['Linea de base', 'Encuesta', 'Mapeo', 'Relevamiento', 'Monitoreo'] },
           { name: 'area_intervencion', label: 'Area o tema', type: 'text', placeholder: 'Bosque, agua, territorio, uso de recursos...' },
@@ -421,6 +532,32 @@
         titlePlaceholder: 'Seguimiento de seguridad alimentaria escolar',
         evidenceTypes: ['registros', 'informes', 'relevamiento', 'facturas'],
         summary: 'Para monitoreo de necesidad, entregas, cobertura, comite escolar y alertas alimentarias.',
+        presets: [
+          {
+            key: 'monitoreo_necesidad',
+            label: 'Monitoreo de necesidad',
+            lineName: 'TG05 Monitoreo de necesidad',
+            titlePrefix: 'Monitoreo de necesidad alimentaria',
+            evidenceType: 'relevamiento',
+            summary: 'Para diagnostico de necesidad, faltantes y cobertura alimentaria.'
+          },
+          {
+            key: 'entrega_alimentos',
+            label: 'Entrega de alimentos',
+            lineName: 'TG05 Entrega de alimentos',
+            titlePrefix: 'Entrega de alimentos escolares',
+            evidenceType: 'registros',
+            summary: 'Para entregas, recepcion, actas y registro logistico.'
+          },
+          {
+            key: 'seguimiento_cobertura',
+            label: 'Seguimiento de cobertura',
+            lineName: 'TG05 Seguimiento de cobertura',
+            titlePrefix: 'Seguimiento de cobertura escolar',
+            evidenceType: 'informes',
+            summary: 'Para control de cobertura, dias servidos y rendimiento del apoyo.'
+          }
+        ],
         fields: [
           { name: 'centro_educativo', label: 'Centro educativo', type: 'text', placeholder: 'Nombre de escuela o sede' },
           { name: 'matricula_total', label: 'Matricula', type: 'number', min: '0' },
@@ -437,6 +574,40 @@
         titlePlaceholder: 'Accion de autogestion comunitaria',
         evidenceTypes: ['registros', 'informes', 'notas', 'audiovisuales'],
         summary: 'Para reuniones, acuerdos, liderazgos, organizacion comunitaria y siguientes acciones.',
+        presets: [
+          {
+            key: 'reunion_comunitaria',
+            label: 'Reunion comunitaria',
+            lineName: 'TG06 Reunion comunitaria',
+            titlePrefix: 'Reunion comunitaria',
+            evidenceType: 'registros',
+            summary: 'Para asambleas, reuniones abiertas y espacios de coordinacion.'
+          },
+          {
+            key: 'liderazgo_comunitario',
+            label: 'Liderazgo comunitario',
+            lineName: 'TG06 Liderazgo comunitario',
+            titlePrefix: 'Fortalecimiento de liderazgo',
+            evidenceType: 'informes',
+            summary: 'Para procesos de liderazgo, roles y acompanamiento a referentes.'
+          },
+          {
+            key: 'acuerdo_comunitario',
+            label: 'Acuerdo comunitario',
+            lineName: 'TG06 Acuerdos comunitarios',
+            titlePrefix: 'Acuerdo comunitario',
+            evidenceType: 'notas',
+            summary: 'Para compromisos, acuerdos y mecanismos de seguimiento.'
+          },
+          {
+            key: 'registro_autogestion',
+            label: 'Registro de autogestion',
+            lineName: 'TG06 Registros de autogestion',
+            titlePrefix: 'Registro de autogestion',
+            evidenceType: 'registros',
+            summary: 'Para actividades operativas y trazabilidad de acciones comunitarias.'
+          }
+        ],
         fields: [
           { name: 'tema_autogestion', label: 'Tema principal', type: 'select', options: ['Organizacion', 'Liderazgo', 'Gestion comunitaria', 'Capacitacion', 'Seguimiento'] },
           { name: 'participantes_total', label: 'Participantes', type: 'number', min: '0' },
@@ -453,6 +624,40 @@
         titlePlaceholder: 'Visita o seguimiento territorial',
         evidenceTypes: ['informes', 'registros', 'audiovisuales', 'notas'],
         summary: 'Para visitas casa por casa, reuniones de lideres, expectativas comunitarias y alertas del territorio.',
+        presets: [
+          {
+            key: 'visita_casa_por_casa',
+            label: 'Visita casa por casa',
+            lineName: 'Visitas casa por casa',
+            titlePrefix: 'Visita casa por casa',
+            evidenceType: 'registros',
+            summary: 'Para recorridos por vivienda y seguimiento focalizado.'
+          },
+          {
+            key: 'reunion_lideres',
+            label: 'Reunion de lideres',
+            lineName: 'Reunion de lideres',
+            titlePrefix: 'Reunion de lideres',
+            evidenceType: 'informes',
+            summary: 'Para sesiones con lideres, voceros o referentes comunitarios.'
+          },
+          {
+            key: 'expectativas_comunidades',
+            label: 'Expectativas de comunidades',
+            lineName: 'Expectativas de comunidades',
+            titlePrefix: 'Expectativas comunitarias',
+            evidenceType: 'notas',
+            summary: 'Para levantar expectativas, preocupaciones y percepciones comunitarias.'
+          },
+          {
+            key: 'asistencia_medica_indigena',
+            label: 'Asistencia medica indigena',
+            lineName: 'Asistencia medica indigena',
+            titlePrefix: 'Asistencia medica',
+            evidenceType: 'informes',
+            summary: 'Para jornadas medicas, derivaciones y seguimiento de salud comunitaria.'
+          }
+        ],
         fields: [
           { name: 'tipo_visita', label: 'Tipo de visita', type: 'select', options: ['Casa por casa', 'Reunion de lideres', 'Expectativas comunitarias', 'Seguimiento general', 'Asistencia medica'] },
           { name: 'hogares_visitados', label: 'Hogares visitados', type: 'number', min: '0' },
@@ -468,6 +673,16 @@
         titlePlaceholder: 'Registro operativo RPI',
         evidenceTypes: ['informes', 'registros', 'notas', 'audiovisuales'],
         summary: 'Usa esta ficha cuando el proceso no cae claramente en uno de los modulos principales.',
+        presets: [
+          {
+            key: 'registro_general',
+            label: 'Registro general',
+            lineName: 'Registro general RPI',
+            titlePrefix: 'Registro general RPI',
+            evidenceType: 'informes',
+            summary: 'Preset general para casos que no encajan exactamente en una subficha.'
+          }
+        ],
         fields: [
           { name: 'contexto_operativo', label: 'Contexto operativo', type: 'text', placeholder: 'Campana, visita, coordinacion, alerta...' },
           { name: 'participantes_total', label: 'Participantes', type: 'number', min: '0' },
@@ -486,6 +701,10 @@
     const processFamily = this.els.processFamily.value;
     const moduleKey = this.resolveModuleKeyFromProcess(processFamily);
     this.setActiveModule(moduleKey, { syncProcess: false, preserveEvidence: true });
+  },
+
+  handlePresetChange() {
+    this.applyPreset(this.els.presetSelect.value, { forceDefaults: true, preserveEvidence: false });
   },
 
   setActiveModule(moduleKey, options = {}) {
@@ -508,23 +727,84 @@
     if (syncProcess) {
       this.els.processFamily.value = config.processFamily;
     }
-
-    this.syncEvidenceOptions(config, preserveEvidence);
-    this.renderDynamicFields(config);
-
-    if (forceDefaults || !this.els.lineName.value) {
-      this.els.lineName.value = config.lineName;
-    }
-    this.els.recordTitle.placeholder = config.titlePlaceholder;
+    this.populatePresets(config);
+    const presetKey = this.resolveInitialPresetKey(config);
+    this.applyPreset(presetKey, { forceDefaults, preserveEvidence, fromModuleSwitch: true });
   },
 
-  syncEvidenceOptions(config, preserveSelection = false) {
+  resolveInitialPresetKey(config) {
+    const presets = config.presets || [];
+    if (!presets.length) {
+      return '';
+    }
+    const current = this.els.presetKey.value;
+    if (current && presets.some(preset => preset.key === current)) {
+      return current;
+    }
+    return presets[0].key;
+  },
+
+  populatePresets(config) {
+    const presets = config.presets || [];
+    const options = presets.map(preset => `<option value="${this.escapeHtml(preset.key)}">${this.escapeHtml(preset.label)}</option>`);
+    this.els.presetSelect.innerHTML = options.join('');
+    if (!presets.length) {
+      this.els.presetSummary.innerHTML = '';
+    }
+  },
+
+  getPresetConfig(moduleConfig, presetKey) {
+    return (moduleConfig.presets || []).find(preset => preset.key === presetKey) || null;
+  },
+
+  applyPreset(presetKey, options = {}) {
+    const moduleConfig = this.moduleDefinitions[this.activeModuleKey] || this.moduleDefinitions.general_rpi;
+    const preset = this.getPresetConfig(moduleConfig, presetKey) || this.getPresetConfig(moduleConfig, this.resolveInitialPresetKey(moduleConfig));
+    const {
+      forceDefaults = false,
+      preserveEvidence = false
+    } = options;
+
+    if (preset) {
+      this.activePresetKey = preset.key;
+      this.els.presetSelect.value = preset.key;
+      this.els.presetKey.value = preset.key;
+      this.els.presetLabel.value = preset.label;
+      this.els.presetSummary.innerHTML = `<strong>${this.escapeHtml(preset.label)}</strong><div>${this.escapeHtml(preset.summary || moduleConfig.summary)}</div>`;
+    } else {
+      this.activePresetKey = '';
+      this.els.presetKey.value = '';
+      this.els.presetLabel.value = '';
+      this.els.presetSummary.innerHTML = '';
+    }
+
+    this.syncEvidenceOptions(moduleConfig, preset, preserveEvidence);
+    this.renderDynamicFields(moduleConfig, preset);
+
+    if (forceDefaults || !this.els.lineName.value) {
+      this.els.lineName.value = (preset && preset.lineName) || moduleConfig.lineName;
+    }
+    this.els.recordTitle.placeholder = (preset && preset.titlePrefix) || moduleConfig.titlePlaceholder;
+    if ((forceDefaults || !this.els.recordTitle.value) && preset && preset.titlePrefix) {
+      this.els.recordTitle.value = '';
+    }
+  },
+
+  syncEvidenceOptions(config, preset, preserveSelection = false) {
     const currentValue = this.els.evidenceType.value;
-    const combined = [...(config.evidenceTypes || []), ...((this.catalogs && this.catalogs.evidenceTypes) || [])];
+    const combined = [
+      ...(preset && preset.evidenceType ? [preset.evidenceType] : []),
+      ...(config.evidenceTypes || []),
+      ...((this.catalogs && this.catalogs.evidenceTypes) || [])
+    ];
     const unique = Array.from(new Set(combined.filter(Boolean)));
     this.populateSelect(this.els.evidenceType, unique, 'Selecciona un tipo');
     if (preserveSelection && unique.includes(currentValue)) {
       this.els.evidenceType.value = currentValue;
+      return;
+    }
+    if (preset && preset.evidenceType) {
+      this.els.evidenceType.value = preset.evidenceType;
       return;
     }
     if (config.evidenceTypes && config.evidenceTypes.length > 0) {
@@ -532,8 +812,8 @@
     }
   },
 
-  renderDynamicFields(config) {
-    const fields = config.fields || [];
+  renderDynamicFields(config, preset) {
+    const fields = [...(config.fields || []), ...((preset && preset.fields) || [])];
     if (!fields.length) {
       this.els.dynamicFields.innerHTML = '';
       this.els.dynamicFields.classList.add('hidden');
@@ -696,6 +976,9 @@
     if (payload.module_label) {
       bits.push(payload.module_label);
     }
+    if (payload.preset_label) {
+      bits.push(payload.preset_label);
+    }
     if (payload.community) {
       bits.push(`en ${payload.community}`);
     }
@@ -713,6 +996,9 @@
     }
     if (payload.tipo_visita) {
       bits.push(payload.tipo_visita);
+    }
+    if (payload.entrega_realizada) {
+      bits.push(`entrega ${payload.entrega_realizada}`);
     }
     return bits.filter(Boolean).join(' | ');
   },
@@ -1002,6 +1288,10 @@
 
   renderRecordDetail(record) {
     const attachments = record.attachments || [];
+    const payloadEntries = this.buildPayloadEntries(record.payload_json || {});
+    const payloadSummary = payloadEntries.length
+      ? `<div class="detail-field"><span>Campos operativos</span><div class="list-summary">${payloadEntries.map(item => `<div class="summary-item"><div><strong>${this.escapeHtml(item.label)}</strong><div class="muted">${this.escapeHtml(item.value)}</div></div></div>`).join('')}</div></div>`
+      : '';
     const payloadText = record.payload_json && Object.keys(record.payload_json).length
       ? `<div class="detail-field"><span>Payload original</span><pre>${this.escapeHtml(JSON.stringify(record.payload_json, null, 2))}</pre></div>`
       : '';
@@ -1024,15 +1314,44 @@
         <div class="detail-field"><span>Resumen</span><div>${this.escapeHtml(record.summary || 'Sin resumen')}</div></div>
         <div class="detail-field"><span>Notas</span><div>${this.escapeHtml(record.notes || 'Sin notas')}</div></div>
         <div class="detail-field"><span>Proceso</span><div>${this.escapeHtml(record.process_family || '')}</div></div>
+        <div class="detail-field"><span>Subficha</span><div>${this.escapeHtml((record.payload_json && record.payload_json.preset_label) || 'No especificada')}</div></div>
         <div class="detail-field"><span>Comunidad</span><div>${this.escapeHtml(record.community || '')}</div></div>
         <div class="detail-field"><span>Linea</span><div>${this.escapeHtml(record.line_name || '')}</div></div>
         <div class="detail-field"><span>Actor clave</span><div>${this.escapeHtml(record.actor_clave || '')}</div></div>
         <div class="detail-field"><span>Expediente</span><div>${this.escapeHtml(record.expediente_code || '')}</div></div>
         <div class="detail-field"><span>Fuente</span><div>${this.escapeHtml(record.source_system || '')}</div></div>
         <div class="detail-field"><span>Adjuntos</span><div>${attachmentHtml}</div></div>
+        ${payloadSummary}
         ${payloadText}
       </div>
     `;
+  },
+
+  buildPayloadEntries(payload) {
+    const ignored = new Set([
+      'event_date',
+      'year_ref',
+      'process_family',
+      'community',
+      'title',
+      'summary',
+      'notes',
+      'evidence_type',
+      'module_key',
+      'module_label',
+      'preset_key',
+      'preset_label',
+      'line_name',
+      'expediente_code',
+      'actor_clave',
+      'top_block'
+    ]);
+    return Object.entries(payload || {})
+      .filter(([key, value]) => !ignored.has(key) && String(value || '').trim() !== '')
+      .map(([key, value]) => ({
+        label: key.replaceAll('_', ' '),
+        value: String(value)
+      }));
   },
 
   connectEventStream() {

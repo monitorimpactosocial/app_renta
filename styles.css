@@ -307,6 +307,14 @@ code {
   color: var(--muted);
 }
 
+.preset-summary {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(198, 106, 31, 0.08);
+  color: var(--muted);
+}
+
 .dynamic-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -584,6 +592,14 @@ code {
   color: var(--muted);
   font-size: 0.82rem;
   margin-bottom: 4px;
+}
+
+.detail-field pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .toast-host {
