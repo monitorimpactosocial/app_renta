@@ -36,12 +36,14 @@ Al iniciar por primera vez, o al ejecutar con `--reseed`, esa base se carga dent
 
 ```powershell
 cd "c:\Users\DiegoMeza\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\Archivos de Latifi Chelala - PROGRAMAS SOCIALES\RPI_APP_WEB"
-python server.py --reseed
+python server.py --host 0.0.0.0 --reseed
 ```
 
 Luego abrir:
 
 - `http://127.0.0.1:8080`
+- `http://localhost:8080`
+- `http://<IP-DE-TU-PC>:8080`
 
 ## Notas tecnicas
 

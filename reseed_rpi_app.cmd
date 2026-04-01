@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python server.py --reseed
+python server.py --host 0.0.0.0 --reseed
 pause

@@ -9,6 +9,7 @@
   deferredPrompt: null,
   eventSource: null,
   selectedRecordId: null,
+  dashboardData: null,
   activeModuleKey: 'consulta_clpi',
   activePresetKey: '',
   moduleDefinitions: {},
@@ -881,6 +882,7 @@
     map[view].panel.hidden = false;
     map[view].panel.classList.add('active');
     if (view === 'dashboard') {
+      this.renderVisibleDashboardCharts();
       this.loadDashboard();
     }
     if (view === 'registros') {
@@ -1142,6 +1144,7 @@
   },
 
   renderDashboard(data) {
+    this.dashboardData = data;
     const kpis = data.kpis || {};
     this.els.kpiTotal.textContent = kpis.totalRecords || 0;
     this.els.kpiThisMonth.textContent = kpis.newThisMonth || 0;
@@ -1155,6 +1158,19 @@
       item => `<div><strong>${this.escapeHtml(item.title || 'Sin titulo')}</strong><div class="muted">${this.escapeHtml(item.community || 'Sin comunidad')} | ${this.escapeHtml(item.event_date || '')}</div></div><span class="badge">${this.escapeHtml(item.process_family || 'Sin proceso')}</span>`
     );
 
+    if (this.els.viewDashboard.hidden) {
+      return;
+    }
+
+    this.renderVisibleDashboardCharts();
+  },
+
+  renderVisibleDashboardCharts() {
+    if (this.els.viewDashboard.hidden || !this.dashboardData) {
+      return;
+    }
+
+    const data = this.dashboardData;
     this.renderChart('chartProcess', 'doughnut', data.byProcess, ['#0c5b45', '#198f66', '#c66a1f', '#3f8c63', '#7a9b8c']);
     this.renderChart('chartEvidence', 'bar', data.byEvidence, ['#c66a1f']);
     this.renderChart('chartTimeline', 'line', data.timeline, ['#0b6bcb']);
@@ -1384,7 +1400,7 @@
     if (window.location.protocol === 'file:') {
       this.renderMessage(
         'loginMsg',
-        'Esta app no debe abrirse como archivo local. Inicia el backend y abre http://127.0.0.1:8080.',
+        `Esta app no debe abrirse como archivo local. Inicia el backend y abre ${this.preferredAppUrl()}.`,
         'warning'
       );
     }
@@ -1396,7 +1412,7 @@
       response = await fetch(url, options);
     } catch (error) {
       throw new Error(
-        'No se pudo contactar al backend. Verifica que la app este abierta en http://127.0.0.1:8080 y que server.py siga corriendo.'
+        `No se pudo contactar al backend. Verifica que la app este abierta en ${this.preferredAppUrl()} y que server.py siga corriendo.`
       );
     }
 
@@ -1414,7 +1430,7 @@
         }
       } else if (contentType.includes('text/html') || trimmedBody.startsWith('<!DOCTYPE html') || trimmedBody.startsWith('<html')) {
         throw new Error(
-          `La app recibio HTML en ${url} en lugar de JSON. Abre el monitor desde http://127.0.0.1:8080; no desde index.html ni desde otro servidor.`
+          `La app recibio HTML en ${url} en lugar de JSON. Abre el monitor desde ${this.preferredAppUrl()}; no desde index.html ni desde otro servidor.`
         );
       } else {
         throw new Error(`La API devolvio una respuesta inesperada en ${url}.`);
@@ -1428,6 +1444,13 @@
     }
 
     return { response, data };
+  },
+
+  preferredAppUrl() {
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+      return `${window.location.origin}/`;
+    }
+    return 'http://127.0.0.1:8080/';
   },
 
   resetForm() {

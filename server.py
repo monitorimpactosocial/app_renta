@@ -890,7 +890,7 @@ def run_server(host: str, port: int, reseed: bool) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="App web local-first para monitoreo RPI")
-    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--reseed", action="store_true", help="Recarga la base desde RPI_BASE_MAESTRA_ACTUAL.csv")
     args = parser.parse_args()
