@@ -268,6 +268,21 @@
   },
 
   async restoreSession() {
+    if (this.isStaticPreviewHost()) {
+      const cachedBootstrap = await this.cacheGet('bootstrap');
+      if (cachedBootstrap && cachedBootstrap.user) {
+        this.user = cachedBootstrap.user;
+        this.catalogs = cachedBootstrap.catalogs;
+        this.enterApp(cachedBootstrap.settings || {});
+        await this.loadDashboard(true);
+        await this.loadRecords(true);
+        this.renderMessage('loginMsg', 'Vista estatica detectada. Se habilito el ultimo cache local disponible.', 'warning');
+      } else {
+        this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
+      }
+      return;
+    }
+
     if (!this.isOffline) {
       try {
         const data = await this.apiJson('/bootstrap');
@@ -300,6 +315,10 @@
     const password = this.els.loginPass.value.trim();
     if (!username || !password) {
       this.renderMessage('loginMsg', 'Completa usuario y contrasena.', 'error');
+      return;
+    }
+    if (this.isStaticPreviewHost()) {
+      this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
       return;
     }
     if (this.isOffline) {
@@ -1403,6 +1422,11 @@
         `Esta app no debe abrirse como archivo local. Inicia el backend y abre ${this.preferredAppUrl()}.`,
         'warning'
       );
+      return;
+    }
+
+    if (this.isStaticPreviewHost()) {
+      this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
     }
   },
 
@@ -1429,6 +1453,9 @@
           throw new Error(`La API devolvio JSON invalido en ${url}.`);
         }
       } else if (contentType.includes('text/html') || trimmedBody.startsWith('<!DOCTYPE html') || trimmedBody.startsWith('<html')) {
+        if (this.isStaticPreviewHost()) {
+          throw new Error(this.remoteHostWarning());
+        }
         throw new Error(
           `La app recibio HTML en ${url} en lugar de JSON. Abre el monitor desde ${this.preferredAppUrl()}; no desde index.html ni desde otro servidor.`
         );
@@ -1446,7 +1473,19 @@
     return { response, data };
   },
 
+  isStaticPreviewHost() {
+    const host = (window.location.hostname || '').toLowerCase();
+    return host.endsWith('github.io');
+  },
+
+  remoteHostWarning() {
+    return `GitHub Pages solo publica el frontend estatico. El login y la base central requieren el backend Flask/SQLite. Abre la app desde ${this.preferredAppUrl()} o desde la IP local del equipo que ejecuta server.py.`;
+  },
+
   preferredAppUrl() {
+    if (this.isStaticPreviewHost()) {
+      return 'http://127.0.0.1:8080/';
+    }
     if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
       return `${window.location.origin}/`;
     }

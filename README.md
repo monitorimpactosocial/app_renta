@@ -45,6 +45,12 @@ Luego abrir:
 - `http://localhost:8080`
 - `http://<IP-DE-TU-PC>:8080`
 
+Importante:
+
+- `https://monitorimpactosocial.github.io/` solo puede servir una vista estatica del frontend.
+- El login, la base SQLite y la API no funcionan en GitHub Pages porque el backend corre en `Flask`.
+- Para usar la app completa debes abrirla desde el servidor local o desde la IP del equipo que corre `server.py`.
+
 ## Notas tecnicas
 
 - El backend sirve tanto la API como los archivos estaticos de la PWA.
