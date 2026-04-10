@@ -173,7 +173,7 @@
 
   initDB() {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('RPI_MONITOR_DB', 1);
+      const request = indexedDB.open('RPI_MONITOR_DB', 2);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
@@ -186,6 +186,9 @@
         }
         if (!db.objectStoreNames.contains(this.storeNames.cache)) {
           db.createObjectStore(this.storeNames.cache, { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('local_records')) {
+          db.createObjectStore('local_records', { keyPath: 'local_id' });
         }
       };
     });
@@ -272,13 +275,10 @@
       const cachedBootstrap = await this.cacheGet('bootstrap');
       if (cachedBootstrap && cachedBootstrap.user) {
         this.user = cachedBootstrap.user;
-        this.catalogs = cachedBootstrap.catalogs;
+        this.catalogs = cachedBootstrap.catalogs || this.standaloneCatalogs();
         this.enterApp(cachedBootstrap.settings || {});
         await this.loadDashboard(true);
         await this.loadRecords(true);
-        this.renderMessage('loginMsg', 'Vista estatica detectada. Se habilito el ultimo cache local disponible.', 'warning');
-      } else {
-        this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
       }
       return;
     }
@@ -310,6 +310,29 @@
     }
   },
 
+  // Credenciales aceptadas en modo standalone (GitHub Pages)
+  standaloneCredentials: [
+    { username: 'admin', password: 'rpi2026', display_name: 'Administrador RPI', role: 'admin' },
+    { username: 'laura', password: 'renta2026', display_name: 'Laura', role: 'tecnico' }
+  ],
+
+  standaloneCatalogs() {
+    const modules = this.moduleDefinitions || {};
+    const families = Object.values(modules).map(m => m.processFamily).filter(Boolean);
+    const evidenceTypes = [...new Set(Object.values(modules).flatMap(m => m.evidenceTypes || []))];
+    return {
+      processFamilies: [...new Set(families)],
+      evidenceTypes,
+      communities: [
+        'Takuarita', 'Hugua Guasu', 'Arroyo Guasu', 'Yryapy', 'Yvy Pyta',
+        'Ko e Poti', 'Mba epu', 'Sawhoyamaxa', 'Yakye Axa', 'Kelyenmagategma',
+        'Kayin o Clim', 'Santa Rosa', 'San Carlos', 'Potrerito'
+      ],
+      actors: ['Lider comunitario', 'Tecnico de campo', 'Docente', 'Referente de salud', 'Anciano/a', 'Joven referente'],
+      years: ['2024', '2025', '2026']
+    };
+  },
+
   async login() {
     const username = this.els.loginUser.value.trim();
     const password = this.els.loginPass.value.trim();
@@ -317,17 +340,41 @@
       this.renderMessage('loginMsg', 'Completa usuario y contrasena.', 'error');
       return;
     }
+
+    this.els.btnLogin.disabled = true;
+    this.els.btnLogin.querySelector('span').textContent = 'Verificando...';
+
+    // Modo standalone para GitHub Pages
     if (this.isStaticPreviewHost()) {
-      this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
-      return;
-    }
-    if (this.isOffline) {
-      this.renderMessage('loginMsg', 'Necesitas conectividad al menos una vez para iniciar sesion.', 'warning');
+      await new Promise(r => setTimeout(r, 600));
+      const match = this.standaloneCredentials.find(c => c.username === username && c.password === password);
+      if (!match) {
+        this.renderMessage('loginMsg', 'Usuario o contrasena incorrectos.', 'error');
+        this.els.btnLogin.disabled = false;
+        this.els.btnLogin.querySelector('span').textContent = 'Ingresar Seguro';
+        return;
+      }
+      this.user = { username: match.username, display_name: match.display_name, role: match.role };
+      this.catalogs = this.standaloneCatalogs();
+      const bootstrap = { user: this.user, catalogs: this.catalogs, settings: { lastSeedAt: new Date().toISOString() } };
+      await this.cachePut('bootstrap', bootstrap);
+      this.renderMessage('loginMsg', '', 'info');
+      this.enterApp(bootstrap.settings);
+      await this.loadDashboard(true);
+      await this.loadRecords(true);
+      this.toast('Sesion iniciada en modo local.', 'success');
+      this.els.btnLogin.disabled = false;
+      this.els.btnLogin.querySelector('span').textContent = 'Ingresar Seguro';
       return;
     }
 
-    this.els.btnLogin.disabled = true;
-    this.els.btnLogin.textContent = 'Verificando...';
+    if (this.isOffline) {
+      this.renderMessage('loginMsg', 'Necesitas conectividad al menos una vez para iniciar sesion.', 'warning');
+      this.els.btnLogin.disabled = false;
+      this.els.btnLogin.querySelector('span').textContent = 'Ingresar Seguro';
+      return;
+    }
+
     try {
       const { data } = await this.fetchJson(`${this.apiBase}/login`, {
         method: 'POST',
@@ -342,7 +389,7 @@
       this.renderMessage('loginMsg', error.message || 'Error de autenticacion', 'error');
     } finally {
       this.els.btnLogin.disabled = false;
-      this.els.btnLogin.textContent = 'Ingresar';
+      this.els.btnLogin.querySelector('span').textContent = 'Ingresar Seguro';
     }
   },
 
@@ -1038,7 +1085,10 @@
     this.els.btnGuardar.textContent = this.isOffline ? 'Guardando localmente...' : 'Guardando...';
 
     try {
-      if (this.isOffline) {
+      if (this.isStaticPreviewHost()) {
+        await this.saveRecordLocally(payload, files);
+        this.renderFormMessage('Registro guardado localmente en este dispositivo.', 'success');
+      } else if (this.isOffline) {
         await this.queuePendingRecord(payload, files);
         this.renderFormMessage('Registro guardado en cola local. Se sincronizara al volver la conexion.', 'warning');
       } else {
@@ -1088,8 +1138,96 @@
     this.updateConnectionUi();
   },
 
+  async saveRecordLocally(payload, files) {
+    const localId = `LOCAL-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+    const record = {
+      local_id: localId,
+      record_uuid: localId,
+      created_at: new Date().toISOString(),
+      event_date: payload.event_date || new Date().toISOString().split('T')[0],
+      year_ref: payload.year_ref || new Date().getFullYear().toString(),
+      process_family: payload.process_family || '',
+      evidence_type: payload.evidence_type || '',
+      community: payload.community || '',
+      actor_clave: payload.actor_clave || '',
+      line_name: payload.line_name || '',
+      expediente_code: payload.expediente_code || '',
+      title: payload.title || '',
+      summary: payload.summary || '',
+      notes: payload.notes || '',
+      module_key: payload.module_key || '',
+      module_label: payload.module_label || '',
+      preset_key: payload.preset_key || '',
+      preset_label: payload.preset_label || '',
+      source: 'standalone',
+      attachments: (files || []).map(f => f.name),
+      _payload: payload
+    };
+    await this.dbPut('local_records', record);
+    this.toast('Registro guardado localmente.', 'success');
+  },
+
+  async getLocalRecords(filters = {}) {
+    const all = await this.dbGetAll('local_records');
+    return all.filter(r => {
+      if (filters.process_family && r.process_family !== filters.process_family) return false;
+      if (filters.community && r.community !== filters.community) return false;
+      if (filters.year_ref && r.year_ref !== filters.year_ref) return false;
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const hay = [r.title, r.community, r.expediente_code, r.summary, r.notes]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => (b.event_date || '').localeCompare(a.event_date || ''));
+  },
+
+  buildLocalDashboard(records) {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const communities = new Set(records.map(r => r.community).filter(Boolean));
+
+    const byProcess = {};
+    const byEvidence = {};
+    const byMonth = {};
+    const byCommunity = {};
+
+    records.forEach(r => {
+      const pf = r.process_family || 'Sin proceso';
+      byProcess[pf] = (byProcess[pf] || 0) + 1;
+      const ev = r.evidence_type || 'Sin tipo';
+      byEvidence[ev] = (byEvidence[ev] || 0) + 1;
+      const month = (r.event_date || '').substring(0, 7) || 'Sin fecha';
+      byMonth[month] = (byMonth[month] || 0) + 1;
+      const com = r.community || 'Sin comunidad';
+      byCommunity[com] = (byCommunity[com] || 0) + 1;
+    });
+
+    const toList = obj => Object.entries(obj).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+
+    return {
+      kpis: {
+        totalRecords: records.length,
+        newThisMonth: records.filter(r => (r.event_date || '').startsWith(thisMonth)).length,
+        communitiesCovered: communities.size,
+        attachmentsTotal: records.reduce((s, r) => s + (r.attachments || []).length, 0)
+      },
+      byProcess: toList(byProcess),
+      byEvidence: toList(byEvidence),
+      timeline: Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b)).map(([label, value]) => ({ label, value })),
+      byCommunity: toList(byCommunity).slice(0, 8),
+      recent: records.slice(0, 5).map(r => ({
+        title: r.title,
+        community: r.community,
+        event_date: r.event_date,
+        process_family: r.process_family
+      }))
+    };
+  },
+
   async syncPending() {
-    if (this.isOffline || !this.user) {
+    if (this.isOffline || !this.user || this.isStaticPreviewHost()) {
       return;
     }
     const pending = await this.dbGetAll(this.storeNames.pending);
@@ -1141,6 +1279,12 @@
     }
     const filters = this.dashboardFilters();
     const cacheKey = this.cacheKey('dashboard', filters);
+
+    if (this.isStaticPreviewHost()) {
+      const records = await this.getLocalRecords(filters);
+      this.renderDashboard(this.buildLocalDashboard(records));
+      return;
+    }
 
     try {
       if (this.isOffline || forceCache) {
@@ -1255,6 +1399,30 @@
     }
     const filters = this.recordsFilters();
     const cacheKey = this.cacheKey('records', filters);
+
+    if (this.isStaticPreviewHost()) {
+      const localRecords = await this.getLocalRecords(filters);
+      const mapped = localRecords.map(r => ({
+        id: r.local_id,
+        event_date: r.event_date,
+        process_family: r.process_family,
+        community: r.community,
+        evidence_type: r.evidence_type,
+        title: r.title,
+        source_system: 'local',
+        attachment_count: (r.attachments || []).length,
+        summary: r.summary,
+        notes: r.notes,
+        line_name: r.line_name,
+        expediente_code: r.expediente_code,
+        actor_clave: r.actor_clave,
+        module_label: r.module_label,
+        preset_label: r.preset_label
+      }));
+      this.renderRecords(mapped);
+      return;
+    }
+
     try {
       if (this.isOffline || forceCache) {
         const cached = await this.cacheGet(cacheKey);
@@ -1302,10 +1470,25 @@
   },
 
   async selectRecord(recordId) {
-    this.selectedRecordId = Number(recordId);
+    this.selectedRecordId = recordId;
     this.els.recordsBody.querySelectorAll('.record-row').forEach(row => {
-      row.classList.toggle('active', Number(row.dataset.recordId) === this.selectedRecordId);
+      row.classList.toggle('active', row.dataset.recordId === String(recordId));
     });
+
+    if (this.isStaticPreviewHost()) {
+      const localRecord = await this.dbGet('local_records', recordId);
+      if (localRecord) {
+        this.renderRecordDetail({
+          ...localRecord,
+          source_system: 'local',
+          attachment_count: (localRecord.attachments || []).length,
+          attachments: (localRecord.attachments || []).map(name => ({ filename: name, kind: 'archivo', size_bytes: 0 })),
+          payload_json: localRecord._payload || {}
+        });
+      }
+      return;
+    }
+
     try {
       const data = await this.apiJson(`/records/${recordId}`);
       this.renderRecordDetail(data.record);
@@ -1383,7 +1566,7 @@
   },
 
   connectEventStream() {
-    if (this.isOffline || !this.user || typeof EventSource === 'undefined') {
+    if (this.isOffline || !this.user || typeof EventSource === 'undefined' || this.isStaticPreviewHost()) {
       return;
     }
     this.closeEventStream();
@@ -1422,11 +1605,6 @@
         `Esta app no debe abrirse como archivo local. Inicia el backend y abre ${this.preferredAppUrl()}.`,
         'warning'
       );
-      return;
-    }
-
-    if (this.isStaticPreviewHost()) {
-      this.renderMessage('loginMsg', this.remoteHostWarning(), 'warning');
     }
   },
 
@@ -1453,9 +1631,6 @@
           throw new Error(`La API devolvio JSON invalido en ${url}.`);
         }
       } else if (contentType.includes('text/html') || trimmedBody.startsWith('<!DOCTYPE html') || trimmedBody.startsWith('<html')) {
-        if (this.isStaticPreviewHost()) {
-          throw new Error(this.remoteHostWarning());
-        }
         throw new Error(
           `La app recibio HTML en ${url} en lugar de JSON. Abre el monitor desde ${this.preferredAppUrl()}; no desde index.html ni desde otro servidor.`
         );
