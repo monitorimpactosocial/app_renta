@@ -10,7 +10,7 @@
   eventSource: null,
   selectedRecordId: null,
   dashboardData: null,
-  activeModuleKey: 'consulta_clpi',
+  activeModuleKey: 'apicultura',
   activePresetKey: '',
   moduleDefinitions: {},
   storeNames: {
@@ -324,11 +324,11 @@
       processFamilies: [...new Set(families)],
       evidenceTypes,
       communities: [
-        'Takuarita', 'Hugua Guasu', 'Arroyo Guasu', 'Yryapy', 'Yvy Pyta',
-        'Ko e Poti', 'Mba epu', 'Sawhoyamaxa', 'Yakye Axa', 'Kelyenmagategma',
-        'Kayin o Clim', 'Santa Rosa', 'San Carlos', 'Potrerito'
+        'Hugua Guasu', 'Takuarita', 'Arroyo Guasu', 'Yryapy', 'Ko\'e Poti',
+        'Vy\'a Renda', 'Santa Rosa', 'San Carlos', 'Potrerito',
+        'Yvy Pyta', 'Mba\'epu', 'Sawhoyamaxa', 'Yakye Axa'
       ],
-      actors: ['Lider comunitario', 'Tecnico de campo', 'Docente', 'Referente de salud', 'Anciano/a', 'Joven referente'],
+      actors: ['Tecnico apicultura', 'Tecnico agricultura', 'Tecnico comercializacion', 'Tecnico produccion animal', 'Lider comunitario', 'Productor/a'],
       years: ['2024', '2025', '2026']
     };
   },
@@ -436,321 +436,132 @@
 
   buildModuleDefinitions() {
     return {
-      consulta_clpi: {
-        label: 'Consulta y CLPI',
-        processFamily: 'consulta_y_consentimiento',
-        lineName: 'CCLPI / CLPI / CPLI',
-        titlePlaceholder: 'Consulta de CLPI en comunidad',
-        evidenceTypes: ['actas', 'informes', 'registros', 'audiovisuales'],
-        summary: 'Pensado para actas, acuerdos, consentimiento, lideres participantes y proximos hitos de consulta.',
+      apicultura: {
+        label: 'Apicultura',
+        processFamily: 'apicultura',
+        lineName: 'Apicultura',
+        titlePlaceholder: 'Registro de apiario o cosecha',
+        evidenceTypes: ['registro_cosecha', 'registro_produccion', 'informe_tecnico', 'planilla_firma'],
+        summary: 'Apiarios, cosecha de miel, produccion para consumo y renta. Diferenciado por codigo de apiario.',
         presets: [
-          {
-            key: 'acta_permiso_consentimiento',
-            label: 'Acta de permiso y consentimiento',
-            lineName: 'CCLPI actas de permiso y consentimiento',
-            titlePrefix: 'Acta de permiso y consentimiento',
-            evidenceType: 'actas',
-            summary: 'Usa este preset para permisos, consentimiento y firma de acuerdos iniciales.',
-            fields: [
-              { name: 'sitio_consulta', label: 'Sitio de consulta', type: 'text', placeholder: 'Comunidad, escuela, salon, vivienda...' }
-            ]
-          },
-          {
-            key: 'clpi_nueva_comunidad',
-            label: 'CLPI para nueva comunidad',
-            lineName: 'CLPI nuevas comunidades',
-            titlePrefix: 'Proceso CLPI en nueva comunidad',
-            evidenceType: 'informes',
-            summary: 'Para apertura de proceso CLPI con comunidades nuevas o recientemente incorporadas.'
-          },
-          {
-            key: 'pmf_cpli',
-            label: 'CPLI para PMF',
-            lineName: 'Plan de Manejo Forestal PMF',
-            titlePrefix: 'CPLI vinculado a PMF',
-            evidenceType: 'actas',
-            summary: 'Pensado para sesiones de consulta vinculadas al plan de manejo forestal.'
-          },
-          {
-            key: 'seguimiento_consulta',
-            label: 'Seguimiento de consulta',
-            lineName: 'Seguimiento de consulta y consentimiento',
-            titlePrefix: 'Seguimiento de consulta',
-            evidenceType: 'registros',
-            summary: 'Para seguimiento posterior a actas, acuerdos y hitos ya iniciados.'
-          }
+          { key: 'registro_apiario', label: 'Registro de apiario', lineName: 'Apicultura registro', titlePrefix: 'Registro de apiario', evidenceType: 'registro_produccion', summary: 'Estado productivo del apiario, cantidad de colmenas y condicion general.' },
+          { key: 'cosecha_miel', label: 'Cosecha de miel', lineName: 'Apicultura cosecha', titlePrefix: 'Cosecha de miel', evidenceType: 'registro_cosecha', summary: 'Cantidad cosechada, cuanto para consumo propio y cuanto para renta/venta.' },
+          { key: 'comercializacion_miel', label: 'Comercializacion de miel', lineName: 'Apicultura comercializacion', titlePrefix: 'Venta de miel', evidenceType: 'registro_produccion', summary: 'Registro de venta de miel: cantidad, precio y destino.' },
+          { key: 'mantenimiento_apiario', label: 'Mantenimiento de apiario', lineName: 'Apicultura mantenimiento', titlePrefix: 'Mantenimiento de apiario', evidenceType: 'informe_tecnico', summary: 'Revision, limpieza, tratamiento sanitario y mantenimiento general.' }
         ],
         fields: [
-          { name: 'ruta_consulta', label: 'Ruta de consulta', type: 'select', options: ['CCLPI', 'CLPI', 'CPLI', 'Consulta preliminar'] },
-          { name: 'fase_consulta', label: 'Fase actual', type: 'select', options: ['Preparacion', 'Socializacion', 'Deliberacion', 'Consentimiento', 'Seguimiento'] },
-          { name: 'participantes_total', label: 'Participantes', type: 'number', min: '0' },
-          { name: 'lideres_presentes', label: 'Lideres presentes', type: 'text', placeholder: 'Nombres o referentes clave' },
-          { name: 'acuerdo_principal', label: 'Acuerdo principal', type: 'textarea', full: true, placeholder: 'Sintetiza el acuerdo, permiso o principal decision.' },
-          { name: 'proximo_hito', label: 'Proximo hito', type: 'textarea', full: true, placeholder: 'Que falta, quien lo hara y para cuando.' }
+          { name: 'codigo_apiario', label: 'Codigo de apiario', type: 'text', placeholder: 'API-001' },
+          { name: 'estado_productivo', label: 'Estado productivo', type: 'select', options: ['Inicio', 'En ejecucion', 'Cosecha'] },
+          { name: 'cantidad_cosecha_kg', label: 'Cantidad cosechada (kg)', type: 'number', min: '0' },
+          { name: 'cantidad_consumo_kg', label: 'Consumo propio (kg)', type: 'number', min: '0' },
+          { name: 'cantidad_renta_kg', label: 'Para renta/venta (kg)', type: 'number', min: '0' },
+          { name: 'precio_venta', label: 'Precio de venta (Gs)', type: 'number', min: '0' },
+          { name: 'componente', label: 'Componente', type: 'select', options: ['Industrial', 'Indigena'] }
         ]
       },
-      documentaciones: {
-        label: 'Documentaciones',
-        processFamily: 'documentaciones',
-        lineName: 'TG04 Documentaciones',
-        titlePlaceholder: 'Gestion documental en comunidad',
-        evidenceTypes: ['registros', 'solicitud', 'informes', 'facturas'],
-        summary: 'Para tramites, solicitudes, cedulas, certificados, carnet indigena y seguimiento administrativo.',
+      agricultura: {
+        label: 'Agricultura',
+        processFamily: 'agricultura',
+        lineName: 'Agricultura',
+        titlePlaceholder: 'Registro de produccion agricola',
+        evidenceTypes: ['registro_produccion', 'informe_tecnico', 'planilla_firma', 'relevamiento'],
+        summary: 'Produccion agricola por tipo de huerta, rubros de cultivo, consumo y renta.',
         presets: [
-          {
-            key: 'carnet_indigena',
-            label: 'Carnet indigena',
-            lineName: 'TG04 Carnet indigena',
-            titlePrefix: 'Gestion de carnet indigena',
-            evidenceType: 'registros',
-            summary: 'Para jornadas de carnet indigena, recepcion de documentos y entrega.'
-          },
-          {
-            key: 'cedulacion',
-            label: 'Cedulacion',
-            lineName: 'TG04 Cedulacion',
-            titlePrefix: 'Gestion de cedulacion',
-            evidenceType: 'solicitud',
-            summary: 'Para primera vez, renovacion, contrasenas o seguimiento con Identificaciones.'
-          },
-          {
-            key: 'inscripcion_nacimiento',
-            label: 'Inscripcion de nacimiento',
-            lineName: 'TG04 Inscripcion de nacimiento',
-            titlePrefix: 'Inscripcion de nacimiento',
-            evidenceType: 'solicitud',
-            summary: 'Para partidas, inscripcion tardia, informes de no existencia y tramites conexos.'
-          },
-          {
-            key: 'certificados',
-            label: 'Certificados y constancias',
-            lineName: 'TG04 Certificados',
-            titlePrefix: 'Gestion de certificados',
-            evidenceType: 'informes',
-            summary: 'Para certificados, constancias y otros documentos administrativos.'
-          }
+          { key: 'huerta_escolar', label: 'Huerta Escolar', lineName: 'Agricultura huerta escolar', titlePrefix: 'Huerta escolar', evidenceType: 'registro_produccion', summary: 'Huerta en centro educativo: rubros, superficie y produccion.' },
+          { key: 'huerta_comercial', label: 'Huerta Comercial (Hugua Guazu)', lineName: 'Agricultura huerta comercial', titlePrefix: 'Huerta comercial', evidenceType: 'registro_produccion', summary: 'Huerta comercial de Hugua Guazu: volumen de produccion y destino.' },
+          { key: 'huerta_comunitaria', label: 'Huerta Comunitaria (Vy\'a Renda)', lineName: 'Agricultura huerta comunitaria', titlePrefix: 'Huerta comunitaria', evidenceType: 'registro_produccion', summary: 'Huerta comunitaria Vy\'a Renda: produccion colectiva y distribucion.' },
+          { key: 'huerta_familiar', label: 'Huerta Familiar', lineName: 'Agricultura huerta familiar', titlePrefix: 'Huerta familiar', evidenceType: 'registro_produccion', summary: 'Huerta a nivel familiar: autoconsumo y excedente para renta.' }
         ],
         fields: [
-          { name: 'tipo_documentacion', label: 'Tipo de documentacion', type: 'select', options: ['Carnet indigena', 'Cedula primera vez', 'Cedula renovacion', 'Certificado', 'Inscripcion de nacimiento', 'Otro'] },
-          { name: 'institucion_referida', label: 'Institucion referida', type: 'select', options: ['INDI', 'Registro Civil', 'Identificaciones', 'Municipalidad', 'Otro'] },
-          { name: 'cantidad_gestiones', label: 'Cantidad de gestiones', type: 'number', min: '0' },
-          { name: 'estado_tramite', label: 'Estado del tramite', type: 'select', options: ['Iniciado', 'En gestion', 'Entregado', 'Observado'] },
-          { name: 'beneficiarios_total', label: 'Beneficiarios', type: 'number', min: '0' },
-          { name: 'observacion_tramite', label: 'Observacion del tramite', type: 'textarea', full: true, placeholder: 'Cuellos de botella, faltantes, entrega o proximo paso.' }
+          { name: 'tipo_huerta', label: 'Tipo de huerta', type: 'select', options: ['Escolar', 'Comercial', 'Comunitaria', 'Familiar'] },
+          { name: 'rubro', label: 'Rubro/cultivo', type: 'text', placeholder: 'Mandioca, poroto, maiz, verduras...' },
+          { name: 'superficie_ha', label: 'Superficie (ha)', type: 'number', min: '0' },
+          { name: 'cantidad_produccion_kg', label: 'Produccion (kg)', type: 'number', min: '0' },
+          { name: 'cantidad_consumo_kg', label: 'Consumo propio (kg)', type: 'number', min: '0' },
+          { name: 'cantidad_renta_kg', label: 'Para renta/venta (kg)', type: 'number', min: '0' },
+          { name: 'componente', label: 'Componente', type: 'select', options: ['Industrial', 'Indigena'] }
         ]
       },
-      servicios_ecosistemicos: {
-        label: 'Servicios ecosistemicos',
-        processFamily: 'servicios_ecosistemicos',
-        lineName: 'TG01 Servicios ecosistemicos',
-        titlePlaceholder: 'Relevamiento de servicios ecosistemicos',
-        evidenceTypes: ['encuesta', 'relevamiento', 'mapas', 'informes'],
-        summary: 'Para linea de base, encuestas, mapeos, diagnosticos y monitoreo territorial o ambiental.',
+      ganaderia: {
+        label: 'Ganaderia',
+        processFamily: 'ganaderia',
+        lineName: 'Ganaderia',
+        titlePlaceholder: 'Registro de produccion animal',
+        evidenceTypes: ['registro_produccion', 'informe_tecnico', 'planilla_firma'],
+        summary: 'Produccion animal, avicultura y forraje. Cantidad de cabezas, destino y componente.',
         presets: [
-          {
-            key: 'linea_base',
-            label: 'Linea de base',
-            lineName: 'TG01 Linea de base',
-            titlePrefix: 'Linea de base de servicios ecosistemicos',
-            evidenceType: 'encuesta',
-            summary: 'Para instrumentos base, fichas de levantamiento y datos de arranque.'
-          },
-          {
-            key: 'mapeo_comunitario',
-            label: 'Mapeo comunitario',
-            lineName: 'TG01 Mapeo comunitario',
-            titlePrefix: 'Mapeo comunitario',
-            evidenceType: 'mapas',
-            summary: 'Para croquis, mapas, delimitacion territorial y ubicacion de recursos.'
-          },
-          {
-            key: 'relevamiento_territorial',
-            label: 'Relevamiento territorial',
-            lineName: 'TG01 Relevamiento territorial',
-            titlePrefix: 'Relevamiento territorial',
-            evidenceType: 'relevamiento',
-            summary: 'Para recorridos de campo, validacion territorial y observacion directa.'
-          },
-          {
-            key: 'monitoreo_ecosistemico',
-            label: 'Monitoreo ecosistemico',
-            lineName: 'TG01 Monitoreo ecosistemico',
-            titlePrefix: 'Monitoreo ecosistemico',
-            evidenceType: 'informes',
-            summary: 'Para seguimiento periodico, cambios observados y comparacion temporal.'
-          }
+          { key: 'produccion_animal', label: 'Produccion animal', lineName: 'Ganaderia produccion', titlePrefix: 'Produccion animal', evidenceType: 'registro_produccion', summary: 'Registro de produccion bovina, porcina o caprina.' },
+          { key: 'avicultura', label: 'Avicultura', lineName: 'Ganaderia avicultura', titlePrefix: 'Avicultura', evidenceType: 'registro_produccion', summary: 'Cria de aves: cantidad, produccion de huevos y destino.' },
+          { key: 'produccion_forraje', label: 'Produccion de forraje', lineName: 'Ganaderia forraje', titlePrefix: 'Produccion de forraje', evidenceType: 'informe_tecnico', summary: 'Produccion de forraje para alimentacion animal.' }
         ],
         fields: [
-          { name: 'instrumento_aplicado', label: 'Instrumento aplicado', type: 'select', options: ['Linea de base', 'Encuesta', 'Mapeo', 'Relevamiento', 'Monitoreo'] },
-          { name: 'area_intervencion', label: 'Area o tema', type: 'text', placeholder: 'Bosque, agua, territorio, uso de recursos...' },
-          { name: 'hogares_beneficiados', label: 'Hogares relevados', type: 'number', min: '0' },
-          { name: 'referente_local', label: 'Referente local', type: 'text', placeholder: 'Lider o referente consultado' },
-          { name: 'necesidad_detectada', label: 'Necesidad detectada', type: 'textarea', full: true, placeholder: 'Que necesidad o riesgo se detecto.' },
-          { name: 'resultado_inmediato', label: 'Resultado inmediato', type: 'textarea', full: true, placeholder: 'Hallazgo principal o cambio observado.' }
+          { name: 'tipo_produccion', label: 'Tipo de produccion', type: 'select', options: ['Bovina', 'Avicola', 'Porcina', 'Caprina', 'Forraje'] },
+          { name: 'cantidad_cabezas', label: 'Cantidad de cabezas/aves', type: 'number', min: '0' },
+          { name: 'produccion_forraje_kg', label: 'Produccion de forraje (kg)', type: 'number', min: '0' },
+          { name: 'destino', label: 'Destino', type: 'select', options: ['Consumo', 'Renta', 'Mixto'] },
+          { name: 'componente', label: 'Componente', type: 'select', options: ['Industrial', 'Indigena'] }
         ]
       },
-      seguridad_alimentaria: {
-        label: 'Seguridad alimentaria escolar',
-        processFamily: 'seguridad_alimentaria_escolar',
-        lineName: 'TG05 Seguridad alimentaria escolar',
-        titlePlaceholder: 'Seguimiento de seguridad alimentaria escolar',
-        evidenceTypes: ['registros', 'informes', 'relevamiento', 'facturas'],
-        summary: 'Para monitoreo de necesidad, entregas, cobertura, comite escolar y alertas alimentarias.',
+      comercializacion: {
+        label: 'Comercializacion',
+        processFamily: 'comercializacion',
+        lineName: 'Comercializacion',
+        titlePlaceholder: 'Registro de venta o comercializacion',
+        evidenceTypes: ['registro_venta', 'informe_tecnico', 'facturas'],
+        summary: 'Ventas, ferias, mercados e ingresos por renta. Canal de venta y monto.',
         presets: [
-          {
-            key: 'monitoreo_necesidad',
-            label: 'Monitoreo de necesidad',
-            lineName: 'TG05 Monitoreo de necesidad',
-            titlePrefix: 'Monitoreo de necesidad alimentaria',
-            evidenceType: 'relevamiento',
-            summary: 'Para diagnostico de necesidad, faltantes y cobertura alimentaria.'
-          },
-          {
-            key: 'entrega_alimentos',
-            label: 'Entrega de alimentos',
-            lineName: 'TG05 Entrega de alimentos',
-            titlePrefix: 'Entrega de alimentos escolares',
-            evidenceType: 'registros',
-            summary: 'Para entregas, recepcion, actas y registro logistico.'
-          },
-          {
-            key: 'seguimiento_cobertura',
-            label: 'Seguimiento de cobertura',
-            lineName: 'TG05 Seguimiento de cobertura',
-            titlePrefix: 'Seguimiento de cobertura escolar',
-            evidenceType: 'informes',
-            summary: 'Para control de cobertura, dias servidos y rendimiento del apoyo.'
-          }
+          { key: 'venta_directa', label: 'Venta directa', lineName: 'Comercializacion directa', titlePrefix: 'Venta directa', evidenceType: 'registro_venta', summary: 'Venta directa al consumidor sin intermediario.' },
+          { key: 'feria_local', label: 'Feria local', lineName: 'Comercializacion feria', titlePrefix: 'Feria local', evidenceType: 'registro_venta', summary: 'Participacion en feria local o regional.' },
+          { key: 'intermediario', label: 'Venta a intermediario', lineName: 'Comercializacion intermediario', titlePrefix: 'Venta a intermediario', evidenceType: 'facturas', summary: 'Venta a acopiador, intermediario o cooperativa.' }
         ],
         fields: [
-          { name: 'centro_educativo', label: 'Centro educativo', type: 'text', placeholder: 'Nombre de escuela o sede' },
-          { name: 'matricula_total', label: 'Matricula', type: 'number', min: '0' },
-          { name: 'entrega_realizada', label: 'Entrega realizada', type: 'select', options: ['Si', 'No', 'Parcial'] },
-          { name: 'dias_cobertura', label: 'Dias de cobertura', type: 'number', min: '0' },
-          { name: 'comite_escolar', label: 'Comite o referente', type: 'text', placeholder: 'Nombre del comite o referente' },
-          { name: 'riesgo_alimentario', label: 'Riesgo o alerta', type: 'textarea', full: true, placeholder: 'Describe faltantes, cobertura insuficiente o riesgo detectado.' }
+          { name: 'rubro_comercializado', label: 'Rubro comercializado', type: 'text', placeholder: 'Miel, mandioca, huevos, carne...' },
+          { name: 'cantidad_vendida_kg', label: 'Cantidad vendida (kg)', type: 'number', min: '0' },
+          { name: 'ingreso_total_gs', label: 'Ingreso total (Gs)', type: 'number', min: '0' },
+          { name: 'canal_venta', label: 'Canal de venta', type: 'select', options: ['Directo', 'Feria', 'Intermediario', 'Cooperativa'] },
+          { name: 'comprador', label: 'Comprador/destino', type: 'text', placeholder: 'Nombre o lugar de venta' },
+          { name: 'componente', label: 'Componente', type: 'select', options: ['Industrial', 'Indigena'] }
         ]
       },
-      autogestion: {
-        label: 'Autogestion comunitaria',
-        processFamily: 'autogestion_comunitaria',
-        lineName: 'TG06 Autogestion comunitaria',
-        titlePlaceholder: 'Accion de autogestion comunitaria',
-        evidenceTypes: ['registros', 'informes', 'notas', 'audiovisuales'],
-        summary: 'Para reuniones, acuerdos, liderazgos, organizacion comunitaria y siguientes acciones.',
+      capacitacion: {
+        label: 'Capacitaciones',
+        processFamily: 'capacitacion',
+        lineName: 'Capacitacion',
+        titlePlaceholder: 'Visita tecnica o taller',
+        evidenceTypes: ['planilla_firma', 'informe_tecnico', 'registros', 'audiovisuales'],
+        summary: 'Visitas tecnicas de campo, talleres grupales, asistencia individual y formacion.',
         presets: [
-          {
-            key: 'reunion_comunitaria',
-            label: 'Reunion comunitaria',
-            lineName: 'TG06 Reunion comunitaria',
-            titlePrefix: 'Reunion comunitaria',
-            evidenceType: 'registros',
-            summary: 'Para asambleas, reuniones abiertas y espacios de coordinacion.'
-          },
-          {
-            key: 'liderazgo_comunitario',
-            label: 'Liderazgo comunitario',
-            lineName: 'TG06 Liderazgo comunitario',
-            titlePrefix: 'Fortalecimiento de liderazgo',
-            evidenceType: 'informes',
-            summary: 'Para procesos de liderazgo, roles y acompanamiento a referentes.'
-          },
-          {
-            key: 'acuerdo_comunitario',
-            label: 'Acuerdo comunitario',
-            lineName: 'TG06 Acuerdos comunitarios',
-            titlePrefix: 'Acuerdo comunitario',
-            evidenceType: 'notas',
-            summary: 'Para compromisos, acuerdos y mecanismos de seguimiento.'
-          },
-          {
-            key: 'registro_autogestion',
-            label: 'Registro de autogestion',
-            lineName: 'TG06 Registros de autogestion',
-            titlePrefix: 'Registro de autogestion',
-            evidenceType: 'registros',
-            summary: 'Para actividades operativas y trazabilidad de acciones comunitarias.'
-          }
+          { key: 'visita_tecnica', label: 'Visita tecnica de campo', lineName: 'Capacitacion visita', titlePrefix: 'Visita tecnica', evidenceType: 'informe_tecnico', summary: 'Visita de tecnico a finca, apiario o comunidad.' },
+          { key: 'taller_grupal', label: 'Taller grupal', lineName: 'Capacitacion taller', titlePrefix: 'Taller grupal', evidenceType: 'planilla_firma', summary: 'Taller con grupo de productores, teoria y practica.' },
+          { key: 'asistencia_individual', label: 'Asistencia tecnica individual', lineName: 'Capacitacion individual', titlePrefix: 'Asistencia tecnica', evidenceType: 'informe_tecnico', summary: 'Atencion personalizada a un productor o familia.' }
         ],
         fields: [
-          { name: 'tema_autogestion', label: 'Tema principal', type: 'select', options: ['Organizacion', 'Liderazgo', 'Gestion comunitaria', 'Capacitacion', 'Seguimiento'] },
-          { name: 'participantes_total', label: 'Participantes', type: 'number', min: '0' },
-          { name: 'organizacion_referente', label: 'Organizacion referente', type: 'text', placeholder: 'Comunidad, comite u organizacion' },
-          { name: 'lider_comunitario', label: 'Lider comunitario', type: 'text', placeholder: 'Nombre del referente' },
-          { name: 'acuerdo_principal', label: 'Acuerdo principal', type: 'textarea', full: true, placeholder: 'Que se acordo o definio.' },
-          { name: 'proxima_accion', label: 'Proxima accion', type: 'textarea', full: true, placeholder: 'Compromisos, responsables y plazo.' }
+          { name: 'tipo_actividad', label: 'Tipo de actividad', type: 'select', options: ['Visita tecnica', 'Taller', 'Capacitacion', 'Asistencia individual', 'Demostracion'] },
+          { name: 'tema', label: 'Tema', type: 'text', placeholder: 'Manejo de colmenas, riego, poda...' },
+          { name: 'participantes_total', label: 'Total participantes', type: 'number', min: '0' },
+          { name: 'tecnico_responsable', label: 'Tecnico responsable', type: 'text', placeholder: 'Nombre del tecnico' },
+          { name: 'resultado', label: 'Resultado y seguimiento', type: 'textarea', full: true, placeholder: 'Que se logro y que falta hacer.' }
         ]
       },
-      seguimiento_indigena: {
-        label: 'Seguimiento indigena',
-        processFamily: 'seguimiento_componente_indigena',
-        lineName: 'Seguimiento componente indigena',
-        titlePlaceholder: 'Visita o seguimiento territorial',
-        evidenceTypes: ['informes', 'registros', 'audiovisuales', 'notas'],
-        summary: 'Para visitas casa por casa, reuniones de lideres, expectativas comunitarias y alertas del territorio.',
+      entregas: {
+        label: 'Entregas y Compromisos',
+        processFamily: 'entregas_compromisos',
+        lineName: 'Entregas',
+        titlePlaceholder: 'Entrega de insumos o compromiso',
+        evidenceTypes: ['planilla_firma', 'acta_entrega', 'registros', 'facturas'],
+        summary: 'Entregas de insumos, herramientas, semillas y compromisos de seguimiento.',
         presets: [
-          {
-            key: 'visita_casa_por_casa',
-            label: 'Visita casa por casa',
-            lineName: 'Visitas casa por casa',
-            titlePrefix: 'Visita casa por casa',
-            evidenceType: 'registros',
-            summary: 'Para recorridos por vivienda y seguimiento focalizado.'
-          },
-          {
-            key: 'reunion_lideres',
-            label: 'Reunion de lideres',
-            lineName: 'Reunion de lideres',
-            titlePrefix: 'Reunion de lideres',
-            evidenceType: 'informes',
-            summary: 'Para sesiones con lideres, voceros o referentes comunitarios.'
-          },
-          {
-            key: 'expectativas_comunidades',
-            label: 'Expectativas de comunidades',
-            lineName: 'Expectativas de comunidades',
-            titlePrefix: 'Expectativas comunitarias',
-            evidenceType: 'notas',
-            summary: 'Para levantar expectativas, preocupaciones y percepciones comunitarias.'
-          },
-          {
-            key: 'asistencia_medica_indigena',
-            label: 'Asistencia medica indigena',
-            lineName: 'Asistencia medica indigena',
-            titlePrefix: 'Asistencia medica',
-            evidenceType: 'informes',
-            summary: 'Para jornadas medicas, derivaciones y seguimiento de salud comunitaria.'
-          }
+          { key: 'entrega_insumos', label: 'Entrega de insumos', lineName: 'Entregas insumos', titlePrefix: 'Entrega de insumos', evidenceType: 'acta_entrega', summary: 'Entrega de semillas, plantines, agroquimicos u otros insumos.' },
+          { key: 'entrega_herramientas', label: 'Entrega de herramientas', lineName: 'Entregas herramientas', titlePrefix: 'Entrega de herramientas', evidenceType: 'acta_entrega', summary: 'Entrega de herramientas, equipamiento o materiales.' },
+          { key: 'compromiso_seguimiento', label: 'Compromiso de seguimiento', lineName: 'Entregas compromisos', titlePrefix: 'Compromiso de seguimiento', evidenceType: 'registros', summary: 'Acuerdos, compromisos asumidos y fecha de seguimiento.' }
         ],
         fields: [
-          { name: 'tipo_visita', label: 'Tipo de visita', type: 'select', options: ['Casa por casa', 'Reunion de lideres', 'Expectativas comunitarias', 'Seguimiento general', 'Asistencia medica'] },
-          { name: 'hogares_visitados', label: 'Hogares visitados', type: 'number', min: '0' },
-          { name: 'tecnico_apoyo', label: 'Tecnico o aliado', type: 'text', placeholder: 'Nombre del apoyo tecnico' },
-          { name: 'riesgo_detectado', label: 'Riesgo detectado', type: 'textarea', full: true, placeholder: 'Riesgo social, operativo o comunitario.' },
-          { name: 'accion_inmediata', label: 'Accion inmediata', type: 'textarea', full: true, placeholder: 'Respuesta inmediata o derivacion realizada.' }
-        ]
-      },
-      general_rpi: {
-        label: 'Registro general RPI',
-        processFamily: 'general_otro',
-        lineName: 'Registro general RPI',
-        titlePlaceholder: 'Registro operativo RPI',
-        evidenceTypes: ['informes', 'registros', 'notas', 'audiovisuales'],
-        summary: 'Usa esta ficha cuando el proceso no cae claramente en uno de los modulos principales.',
-        presets: [
-          {
-            key: 'registro_general',
-            label: 'Registro general',
-            lineName: 'Registro general RPI',
-            titlePrefix: 'Registro general RPI',
-            evidenceType: 'informes',
-            summary: 'Preset general para casos que no encajan exactamente en una subficha.'
-          }
-        ],
-        fields: [
-          { name: 'contexto_operativo', label: 'Contexto operativo', type: 'text', placeholder: 'Campana, visita, coordinacion, alerta...' },
-          { name: 'participantes_total', label: 'Participantes', type: 'number', min: '0' },
-          { name: 'resultado_inmediato', label: 'Resultado inmediato', type: 'textarea', full: true, placeholder: 'Que paso y que resultado hubo.' }
+          { name: 'tipo_entrega', label: 'Tipo de entrega', type: 'select', options: ['Insumos', 'Herramientas', 'Semillas', 'Plantines', 'Animales', 'Equipamiento'] },
+          { name: 'cantidad', label: 'Cantidad entregada', type: 'number', min: '0' },
+          { name: 'unidad', label: 'Unidad', type: 'select', options: ['Unidades', 'Kg', 'Litros', 'Paquetes', 'Cajas'] },
+          { name: 'beneficiarios_total', label: 'Total beneficiarios', type: 'number', min: '0' },
+          { name: 'compromiso', label: 'Compromiso asumido', type: 'textarea', full: true, placeholder: 'Que se comprometio, quien y para cuando.' },
+          { name: 'fecha_seguimiento', label: 'Proxima fecha de seguimiento', type: 'date' }
         ]
       }
     };
@@ -758,7 +569,7 @@
 
   resolveModuleKeyFromProcess(processFamily) {
     const match = Object.entries(this.moduleDefinitions).find(([, config]) => config.processFamily === processFamily);
-    return match ? match[0] : 'general_rpi';
+    return match ? match[0] : 'apicultura';
   },
 
   handleProcessFamilyChange() {
@@ -772,16 +583,19 @@
   },
 
   setActiveModule(moduleKey, options = {}) {
-    const config = this.moduleDefinitions[moduleKey] || this.moduleDefinitions.general_rpi;
+    const config = this.moduleDefinitions[moduleKey] || this.moduleDefinitions.apicultura;
     const {
       syncProcess = true,
       preserveEvidence = false,
       forceDefaults = false
     } = options;
 
-    this.activeModuleKey = moduleKey in this.moduleDefinitions ? moduleKey : 'general_rpi';
+    this.activeModuleKey = moduleKey in this.moduleDefinitions ? moduleKey : 'apicultura';
     this.els.moduleCards.forEach(card => {
       card.classList.toggle('active', card.dataset.moduleKey === this.activeModuleKey);
+      if (card.dataset.moduleKey === this.activeModuleKey && card.dataset.color) {
+        document.documentElement.style.setProperty('--active-mod', card.dataset.color);
+      }
     });
 
     this.els.moduleKey.value = this.activeModuleKey;
@@ -822,7 +636,7 @@
   },
 
   applyPreset(presetKey, options = {}) {
-    const moduleConfig = this.moduleDefinitions[this.activeModuleKey] || this.moduleDefinitions.general_rpi;
+    const moduleConfig = this.moduleDefinitions[this.activeModuleKey] || this.moduleDefinitions.apicultura;
     const preset = this.getPresetConfig(moduleConfig, presetKey) || this.getPresetConfig(moduleConfig, this.resolveInitialPresetKey(moduleConfig));
     const {
       forceDefaults = false,
@@ -1671,7 +1485,7 @@
     this.els.registroForm.reset();
     this.els.eventDate.value = new Date().toISOString().split('T')[0];
     this.els.yearRef.value = new Date().getFullYear();
-    this.setActiveModule(this.activeModuleKey || 'consulta_clpi', { forceDefaults: true });
+    this.setActiveModule(this.activeModuleKey || 'apicultura', { forceDefaults: true });
     this.renderFormMessage('', 'success');
     this.renderSelectedFiles();
   },

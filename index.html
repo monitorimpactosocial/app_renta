@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0c5b45">
-  <title>RPI Monitor | PARACEL</title>
+  <title>App Renta | PARACEL</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,11 +19,11 @@
   <header class="topbar">
     <div class="brand-wrap">
       <div class="brand-logo-box">
-        <div class="logo">RPI</div>
+        <div class="logo">PR</div>
       </div>
       <div class="titleblock">
-        <div class="title">Programa de Vinculacion con Pueblos Indigenas</div>
-        <div class="subtitle">Captura offline/online, base historica y tablero operativo</div>
+        <div class="title">Programas de Generacion de Renta</div>
+        <div class="subtitle">Monitoreo de produccion, comercializacion y asistencia tecnica</div>
       </div>
     </div>
     <div class="status-wrap">
@@ -42,11 +42,11 @@
           <div class="login-logo" aria-hidden="true">
             <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
               <rect width="72" height="72" rx="20" fill="rgba(255,255,255,0.15)"/>
-              <text x="36" y="46" text-anchor="middle" fill="white" font-size="28" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">RPI</text>
+              <text x="36" y="46" text-anchor="middle" fill="white" font-size="28" font-weight="800" font-family="Plus Jakarta Sans, sans-serif">PR</text>
             </svg>
           </div>
-          <h1 class="login-brand-title">Programa de Vinculacion con Pueblos Indigenas</h1>
-          <p class="login-brand-desc">Captura offline/online, base historica y tablero operativo para el monitoreo de impacto social.</p>
+          <h1 class="login-brand-title">Programas de Generacion de Renta</h1>
+          <p class="login-brand-desc">Monitoreo de produccion, comercializacion y asistencia tecnica para el impacto social de PARACEL.</p>
           <div class="login-brand-features">
             <div class="login-feature">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -129,29 +129,41 @@
               <div class="field full">
                 <label>Linea de trabajo RPI</label>
                 <div id="moduleCards" class="module-cards">
-                  <button class="module-card active" data-module-key="consulta_clpi" type="button">
-                    <strong>Consulta y CLPI</strong>
-                    <span>Actas, acuerdos, permisos y seguimiento de consulta.</span>
+                  <button class="module-card active" data-module-key="apicultura" data-color="#d97706" type="button">
+                    <div class="module-icon" style="--mc: #d97706">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l5.196 3v6L12 14 6.804 11V5z"/><path d="M12 14v8"/><path d="M8 17l-4 2"/><path d="M16 17l4 2"/><circle cx="12" cy="8" r="2"/></svg>
+                    </div>
+                    <div><strong>Apicultura</strong><span>Apiarios, cosecha, miel para consumo y renta.</span></div>
                   </button>
-                  <button class="module-card" data-module-key="documentaciones" type="button">
-                    <strong>Documentaciones</strong>
-                    <span>Tramites, solicitudes, cédulas, certificados y gestiones.</span>
+                  <button class="module-card" data-module-key="agricultura" data-color="#16a34a" type="button">
+                    <div class="module-icon" style="--mc: #16a34a">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M12 20V10"/><path d="M12 10c-2-3-6-3.5-6-7a6 6 0 0 1 6-1"/><path d="M12 10c2-3 6-3.5 6-7a6 6 0 0 0-6-1"/><path d="M12 14c-3 0-5 2-5 2"/><path d="M12 14c3 0 5 2 5 2"/></svg>
+                    </div>
+                    <div><strong>Agricultura</strong><span>Produccion agricola, huertas y rubros de cultivo.</span></div>
                   </button>
-                  <button class="module-card" data-module-key="servicios_ecosistemicos" type="button">
-                    <strong>Servicios ecosistemicos</strong>
-                    <span>Linea de base, relevamientos y monitoreo territorial.</span>
+                  <button class="module-card" data-module-key="ganaderia" data-color="#92400e" type="button">
+                    <div class="module-icon" style="--mc: #92400e">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2c1 1 2 3 2 5s-2 4-4 4-4-2-4-4 1-4 2-5"/><ellipse cx="12" cy="14" rx="7" ry="4"/><path d="M5 18v2"/><path d="M19 18v2"/><path d="M9 18v3"/><path d="M15 18v3"/></svg>
+                    </div>
+                    <div><strong>Ganaderia</strong><span>Produccion animal, forraje y avicultura.</span></div>
                   </button>
-                  <button class="module-card" data-module-key="seguridad_alimentaria" type="button">
-                    <strong>Seguridad alimentaria escolar</strong>
-                    <span>Entregas, necesidad, cobertura y alertas escolares.</span>
+                  <button class="module-card" data-module-key="comercializacion" data-color="#2563eb" type="button">
+                    <div class="module-icon" style="--mc: #2563eb">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </div>
+                    <div><strong>Comercializacion</strong><span>Ventas, mercados e ingresos por renta.</span></div>
                   </button>
-                  <button class="module-card" data-module-key="autogestion" type="button">
-                    <strong>Autogestion comunitaria</strong>
-                    <span>Acuerdos, liderazgos, organizaciones y siguientes pasos.</span>
+                  <button class="module-card" data-module-key="capacitacion" data-color="#7c3aed" type="button">
+                    <div class="module-icon" style="--mc: #7c3aed">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <div><strong>Capacitaciones</strong><span>Visitas tecnicas, talleres y formacion.</span></div>
                   </button>
-                  <button class="module-card" data-module-key="seguimiento_indigena" type="button">
-                    <strong>Seguimiento indigena</strong>
-                    <span>Visitas, reuniones, expectativas y alertas en comunidad.</span>
+                  <button class="module-card" data-module-key="entregas" data-color="#dc2626" type="button">
+                    <div class="module-icon" style="--mc: #dc2626">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+                    </div>
+                    <div><strong>Entregas y Compromisos</strong><span>Entregas de insumos, acuerdos y seguimiento.</span></div>
                   </button>
                 </div>
                 <div id="moduleSummary" class="module-summary"></div>
